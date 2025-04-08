@@ -1,5 +1,6 @@
 import cv2
 import json
+import sys
 
 # Initialize global variables
 points = []
@@ -75,4 +76,7 @@ def run_point_mapping_tool(image_path, output_file="ai/points.json"):
 
 
 if __name__ == "__main__":
-    run_point_mapping_tool("results/player-detection/test_image.png")
+    if len(sys.argv) < 2:
+        print("Usage: python map_coordinates.py <image_path>")
+    else:
+        run_point_mapping_tool(sys.argv[1])
