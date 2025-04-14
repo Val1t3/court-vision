@@ -1,6 +1,6 @@
-from components.baseline_detection import BaselineDetection
-
+from components import BaselineDetection
 import matplotlib.pyplot as plt
+
 
 if __name__ == "__main__":
     print("Hello Court Vision!")
