@@ -2,7 +2,27 @@ import json
 import numpy as np
 import cv2
 
+
 class BaselineDetection:
+    """
+    A clased used to detect baseline of basket court.
+
+    Attributes
+    ----------
+    frame_pah : str
+        Path to the frame file.
+    schema_path : str
+        Path to the schema file.
+    frame_points_path : str
+        Path to the frame points file.
+    schema_points_path : str
+        Path to the schema points file.
+    frame : np.ndarray
+        Frame image object.
+    schema : np.ndarray
+        Schema image object.
+    """
+
     def __init__(self, frame_path: str, schema_path: str, frame_points_path: str, schema_points_path: str):
         """
         Initialize the BaselineDetection class.
@@ -18,6 +38,7 @@ class BaselineDetection:
         schema_points_path : str
             Path to the schema points file.
         """
+
         self.frame_path = frame_path
         self.schema_path = schema_path
         self.frame_points = None
@@ -56,6 +77,7 @@ class BaselineDetection:
         np.ndarray
             The inverse homography matrix.
         """
+
         # Check if points are in the correct format
         if len(self.frame_points) < 4 or len(self.schema_points) < 4:
             raise ValueError("[BaselineDetection error]: not enough points to calculate homography")
@@ -80,6 +102,7 @@ class BaselineDetection:
         np.ndarray
             The warped frame.
         """
+
         # Get the dimensions of the dest
         h_dest, w_dest = dest.shape[:2]
 
@@ -107,6 +130,7 @@ class BaselineDetection:
         np.ndarray
             The image with the line drawn.
         """
+
         # Convert points to integers
         point1 = tuple(map(int, point1))
         point2 = tuple(map(int, point2))
@@ -131,6 +155,7 @@ class BaselineDetection:
         np.ndarray
             The image with identified lines.
         """
+
         # Sideline
         res = self.draw_line_between_points(warped_img, self.schema_points[0], self.schema_points[1])
         res = self.draw_line_between_points(res, self.schema_points[1], self.schema_points[2])

@@ -12,6 +12,8 @@ if __name__ == "__main__":
         schema_points_path="data/schema_points.json"
     )
 
+    # print(help(bd.calculate_homography))
+
     h, h_inv = bd.calculate_homography()
     warped_res = bd.warp_picture(h, bd.frame, bd.schema)
     res = bd.line_identification(warped_res)
@@ -20,4 +22,5 @@ if __name__ == "__main__":
     plt.figure(figsize=(10, 10))
     plt.imshow(new_res, cmap='viridis')
     plt.axis("off")
-    plt.show()
+    # plt.show()
+    plt.savefig("output/main_fig.png")
