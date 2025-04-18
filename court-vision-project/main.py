@@ -1,5 +1,6 @@
 from components import BaselineDetection
 import matplotlib.pyplot as plt
+import cv2
 
 
 if __name__ == "__main__":
@@ -15,7 +16,14 @@ if __name__ == "__main__":
     h, h_inv = bd.calculate_homography()  # Calculate homography between frame and schema
     warped_res = bd.warp_picture(h, bd.frame, bd.schema)  # Create warped frame
     res = bd.line_identification(warped_res, 0)  # Apply line indentification on the warped frame
+    bd.generate_tracking_points()  # Generate points on the detected lines for the tracking management
+    for pt in bd.tracking_points:
+        cv2.circle(warped_res, (int(pt[0]), int(pt[1])), 2, (0, 0, 255), -1)
+
+
     new_res = bd.warp_picture(h_inv, res, bd.frame)  # Warp frame with inv. homography
+
+
 
     plt.figure(figsize=(10, 10))
     plt.imshow(new_res, cmap='viridis')

@@ -6,7 +6,7 @@ import cv2
 if __name__ == "__main__":
     print("Video analysis")
 
-    # FIRST FRAME SELECTION SIMULATION
+    # TODFO: FIRST FRAME SELECTION SIMULATION
 
     bd = BaselineDetection(
         frame_path="assets/test_image.png",
@@ -14,6 +14,19 @@ if __name__ == "__main__":
         frame_points_path="data/frame_points.json",
         schema_points_path="data/schema_points.json"
     )
+
+    h, h_inv = bd.calculate_homography()  # Calculate homography between frame and schema
+    warped_res = bd.warp_picture(h, bd.frame, bd.schema)  # Create warped frame
+    res = bd.line_identification(warped_res, 0)  # Apply line indentification on the warped frame
+    bd.generate_tracking_points()  # Generate points on the detected lines for the tracking management
+
+    # DON'T NEED TO SHOW THE POINTS
+    # for pt in bd.tracking_points:
+    #     cv2.circle(warped_res, (int(pt[0]), int(pt[1])), 2, (0, 0, 255), -1)
+
+    first_frame = bd.warp_picture(h_inv, res, bd.frame)  # Warp frame with inv. homography
+    cv2.imshow('Frame', first_frame)  # Display frame
+
 
     #------------------------------------------------------------------------#
 
@@ -28,6 +41,8 @@ if __name__ == "__main__":
     while(cap.isOpened()):
         ret, frame = cap.read()  # Capture each frame
         if ret:
+            # APPLY LINE IDENTIFICATION
+
             cv2.imshow('Frame', frame)  # Display frame
 
             # Close if 'Q' key pressed

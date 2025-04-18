@@ -223,19 +223,19 @@ class BaselineDetection:
         Generate tracking_points equally spaced on each detected line
         """
         # Sideline segments
-        self.tracking_points.append(self.generate_points_on_line(self.schema_points[0], self.schema_points[1], 10))
-        self.tracking_points.append(self.generate_points_on_line(self.schema_points[1], self.schema_points[2], 10))
-        self.tracking_points.append(self.generate_points_on_line(self.schema_points[2], self.schema_points[3], 10))
-        self.tracking_points.append(self.generate_points_on_line(self.schema_points[3], self.schema_points[0], 10))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[0], self.schema_points[1], 20))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[1], self.schema_points[2], 20))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[2], self.schema_points[3], 20))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[3], self.schema_points[0], 20))
 
         # 3-pt lines
         self.tracking_points.append(self.generate_points_on_line(self.schema_points[4], self.schema_points[5], 10))
         self.tracking_points.append(self.generate_points_on_line(self.schema_points[6], self.schema_points[7], 10))
 
         # Lane lines
-        self.tracking_points.append(self.generate_points_on_line(self.schema_points[8], self.schema_points[9], 10))
-        self.tracking_points.append(self.generate_points_on_line(self.schema_points[10], self.schema_points[11], 10))
-        self.tracking_points.append(self.generate_points_on_line(self.schema_points[11], self.schema_points[8], 10))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[8], self.schema_points[9], 20))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[10], self.schema_points[11], 20))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[11], self.schema_points[8], 20))
 
         # Flatten to a single array
         self.tracking_points = np.vstack(self.tracking_points).astype(np.float32)
