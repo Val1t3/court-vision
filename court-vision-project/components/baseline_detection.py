@@ -37,6 +37,8 @@ class BaselineDetection:
             Path to the frame points file.
         schema_points_path : str
             Path to the schema points file.
+        tracking_points: list
+            Points to track movement of the camera
         """
 
         self.frame_path = frame_path
@@ -45,6 +47,7 @@ class BaselineDetection:
         self.schema_points = None
         self.frame = None
         self.schema = None
+        self.tracking_points = []
 
         # Load images
         self.frame = cv2.imread(frame_path)
@@ -141,7 +144,7 @@ class BaselineDetection:
         return image
 
 
-    def line_identification(self, warped_img: np.ndarray) -> np.ndarray:
+    def line_identification(self, warped_img: np.ndarray, court_side: int) -> np.ndarray:
         """
         Identify lines in the warped image.
 
@@ -149,6 +152,8 @@ class BaselineDetection:
         ----------
         warped_img : np.ndarray
             The warped image.
+        court_side: int
+            The left of right side of the court: 0 -> left, 1 -> right
 
         Returns
         -------
@@ -174,7 +179,12 @@ class BaselineDetection:
         radius = int(np.linalg.norm(np.array(self.schema_points[4]) - np.array(self.schema_points[7])) / 2)
         radius = radius + 5  # Need explanations for the small offset incrementation
 
-        cv2.ellipse(res, center, (radius, radius), 100, 0, 160, (0, 255, 0), 1)
+        if (court_side == 0):
+            cv2.ellipse(res, center, (radius, radius), -100, 20, 180, (0, 255, 0), 1)
+        elif (court_side == 1):
+            cv2.ellipse(res, center, (radius, radius), 100, 0, 160, (0, 255, 0), 1)
+        else:
+            raise ValueError("[BaselineDetection error]: bad value for court_side parameter of line_identification function")
 
         # Lane Line
         res = self.draw_line_between_points(res, self.schema_points[8], self.schema_points[9])
@@ -182,3 +192,50 @@ class BaselineDetection:
         res = self.draw_line_between_points(res, self.schema_points[11], self.schema_points[8])
 
         return res
+
+
+    def generate_points_on_line(self, point1: np.ndarray, point2: np.ndarray, num_points: int = 100) -> np.ndarray:
+        """
+        Generate `num_points` equally spaced points between point1 and point2.
+
+        Parameters
+        ----------
+        point1 : np.ndarray
+            Starting point (x, y).
+        point2 : np.ndarray
+            Ending point (x, y).
+        num_points : int
+            Number of points to generate.
+
+        Returns
+        -------
+        np.ndarray
+            Array of shape (num_points, 2) containing interpolated points.
+        """
+        point1 = np.array(point1, dtype=np.float32)
+        point2 = np.array(point2, dtype=np.float32)
+
+        return np.linspace(point1, point2, num=num_points)
+
+
+    def generate_tracking_points(self):
+        """
+        Generate tracking_points equally spaced on each detected line
+        """
+        # Sideline segments
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[0], self.schema_points[1], 10))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[1], self.schema_points[2], 10))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[2], self.schema_points[3], 10))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[3], self.schema_points[0], 10))
+
+        # 3-pt lines
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[4], self.schema_points[5], 10))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[6], self.schema_points[7], 10))
+
+        # Lane lines
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[8], self.schema_points[9], 10))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[10], self.schema_points[11], 10))
+        self.tracking_points.append(self.generate_points_on_line(self.schema_points[11], self.schema_points[8], 10))
+
+        # Flatten to a single array
+        self.tracking_points = np.vstack(self.tracking_points).astype(np.float32)

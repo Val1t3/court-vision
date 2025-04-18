@@ -34,7 +34,7 @@ def load_points(input_file="points.json"):
         print("No previous points found. Starting fresh.")
         return []
 
-def run_point_mapping_tool(image_path, output_file="ai/points.json"):
+def run_point_mapping_tool(image_path, output_file="points.json"):
     """
     Run the point mapping tool to record points on an image.
     Press 's' to save the points and 'q' to quit without saving.
