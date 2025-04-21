@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     h, h_inv = bd.calculate_homography()  # Calculate homography between frame and schema
     warped_res = bd.warp_picture(h, bd.frame, bd.schema)  # Create warped frame
-    res = bd.line_identification(warped_res, 0)  # Apply line indentification on the warped frame
+    res = bd.line_identification(warped_res, 'right')  # Apply line indentification on the warped frame
     bd.generate_tracking_points()  # Generate points on the detected lines for the tracking management
     for pt in bd.tracking_points:
         cv2.circle(warped_res, (int(pt[0]), int(pt[1])), 2, (0, 0, 255), -1)

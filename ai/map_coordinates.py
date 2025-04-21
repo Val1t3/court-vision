@@ -16,7 +16,7 @@ def click_event(event, x, y, flags, param):
 
         # Draw a circle on the point
         cv2.circle(image_copy, (x, y), 5, (0, 0, 255), -1)
-        cv2.putText(image_copy, f"{len(points)}", (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+        cv2.putText(image_copy, f"{len(points) - 1}", (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
         cv2.imshow(window_name, image_copy)
 
 def save_points(points, output_file="points.json"):

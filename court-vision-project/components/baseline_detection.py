@@ -160,7 +160,7 @@ class BaselineDetection:
         return image
 
 
-    def line_identification(self, warped_img: np.ndarray, court_side: int) -> np.ndarray:
+    def line_identification(self, warped_img: np.ndarray, court_side: str) -> np.ndarray:
         """
         Identify lines in the warped image.
 
@@ -169,7 +169,7 @@ class BaselineDetection:
         warped_img : np.ndarray
             The warped image.
         court_side: int
-            The left of right side of the court: 0 -> left, 1 -> right
+            The left of right side of the court: left or right
 
         Returns
         -------
@@ -195,9 +195,9 @@ class BaselineDetection:
         radius = int(np.linalg.norm(np.array(self.schema_points[4]) - np.array(self.schema_points[7])) / 2)
         radius = radius + 5  # Need explanations for the small offset incrementation
 
-        if (court_side == 0):
+        if (court_side == 'left'):
             cv2.ellipse(res, center, (radius, radius), -100, 20, 180, (0, 255, 0), 1)
-        elif (court_side == 1):
+        elif (court_side == 'right'):
             cv2.ellipse(res, center, (radius, radius), 100, 0, 160, (0, 255, 0), 1)
         else:
             raise ValueError("[BaselineDetection error]: bad value for court_side parameter of line_identification function")
