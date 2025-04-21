@@ -68,6 +68,8 @@ class BaselineDetection:
         if self.frame is None:
             raise ValueError("[BaselineDetection error]: couldn't generate frame")
 
+        # cv2.imwrite("assets/first_frame.png", self.frame)  # Save first frame
+
         # Load points from JSON files
         with open(frame_points_path, 'r') as f:
             frame_data = json.load(f)

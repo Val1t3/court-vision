@@ -20,8 +20,8 @@ if __name__ == "__main__":
     bd = BaselineDetection(
         video_path="assets/extract-1.mp4",
         schema_path="assets/schema.png",
-        frame_points_path="data/frame_points_1.json",
-        schema_points_path="data/schema_points_1.json"
+        frame_points_path="data/frame_points.json",
+        schema_points_path="data/schema_points.json"
     )
 
     h, h_inv = bd.calculate_homography()  # Calculate homography between frame and schema
@@ -77,6 +77,7 @@ if __name__ == "__main__":
         # cv2.imwrite(f'output/optical_flow_{index}.png', show_frame)
         cv2.imshow('Frame', show_frame)
         index += 1
+        p0 = good_new
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break
