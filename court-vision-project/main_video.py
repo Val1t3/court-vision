@@ -59,6 +59,8 @@ if __name__ == "__main__":
         bd.frame = frame
         show_frame = bd.frame.copy()
 
+        tracker.detect_visible_side(bd.frame.shape, h_inv)
+
         prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
         frame_gray = cv2.cvtColor(bd.frame, cv2.COLOR_BGR2GRAY)
 
@@ -71,6 +73,7 @@ if __name__ == "__main__":
 
         # cv2.imwrite(f'output/optical_flow_{index}.png', show_frame)
         cv2.imshow('Frame', show_frame)
+        print(f"Side: {tracker.current_side}")
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break

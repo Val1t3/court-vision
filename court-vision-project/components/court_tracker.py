@@ -74,10 +74,28 @@ class CourtTracker:
             criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01)
         )
 
-        next_pts, st, err = cv2.calcOpticalFlowPyrLK(prev_gray, curr_gray, self.anchor_frame_pts, None, **lk_params)
+        next_pts, st, err = cv2.calcOpticalFlowPyrLK(prev_gray, curr_gray, self.anchor_frame_pts, None)
 
         good_prev = self.anchor_frame_pts[st == 1].reshape(-1, 2)
         good_next = next_pts[st == 1].reshape(-1, 2)
+
+
+        # TRACKING FILTER
+        displacements = []
+
+        for i, (prev_pt, next_pt) in enumerate(zip(good_prev, good_next)):
+            displacements.append(np.linalg.norm(next_pt - prev_pt))
+
+        median_disp = np.median(displacements)  # Compute median of displacements
+        mad_disp = np.median(np.abs(displacements - median_disp))  # Compute median absolute deviation
+        treshold = median_disp + 10 * mad_disp  # MODIFY THE CONSTANT FOR PRECISION
+
+        for i, disp in enumerate(displacements):
+            if disp > treshold:
+                good_next[i] = good_prev[i]
+                print('#######################################')
+                print('MODIF:', good_next[i], 'DISPLACEMENT:', disp, 'TRESHOLD:', treshold)
+
 
         if len(good_next) >= 4:
             H, _ = cv2.findHomography(self.anchor_frame_pts[st == 1], good_next.reshape(-1, 1, 2), cv2.RANSAC, 5.0)
