@@ -3,6 +3,14 @@ import cv2
 
 
 class CourtTracker:
+    """
+    A class used to track important points on the court.
+
+    Attributes
+    ----------
+    schema_pts : np.array
+    current_side : str
+    """
     def __init__(self, schema_points, side: str):
         self.schema_pts = np.array(schema_points, dtype=np.float32)
         self.left_schema_pts = self._get_left_side_pts()
@@ -10,6 +18,7 @@ class CourtTracker:
 
         self.current_side = side
         self.anchor_frame_pts = None
+        self.court_simulation = None
 
 
     def _get_left_side_pts(self):
@@ -31,6 +40,39 @@ class CourtTracker:
             self.schema_pts[10],  # Sideline bottom-right
             self.schema_pts[11],  # Sideline bottom-right mide
         ], dtype=np.float32).reshape(-1, 1, 2)
+
+
+    def simulate_pts(self, points: np.ndarray, h_inv : np.ndarray) -> np.ndarray:
+        """
+        Simulates missing points based on the inverse homography
+
+        pts : array of size of self.schema_pts, and pts who needs to be simulated hahe coordinates 10000, 10000
+
+        Returns
+        -------
+            points: np.ndarray of shape (-1, 2), with missing points filled.
+        """
+
+        # Define indexes
+        mask_null = (points[:, 0] == 10000.) & (points[:, 1] == 10000.)
+        indexes = np.where(mask_null)[0]
+
+        if len(indexes) == 0:
+            return points
+
+        # Select schema points
+        schema_pts = np.array([self.schema_pts[i] for i in indexes])
+        schema_pts = schema_pts.reshape(-1, 1, 2)
+
+        # Convert schema_pts to homogeneous coordinates
+        sim_frame_pts = cv2.perspectiveTransform(schema_pts, h_inv)
+        sim_frame_pts = sim_frame_pts.reshape(-1, 2)
+
+        # Replace null values with simulated
+        for i, sim in enumerate(sim_frame_pts):
+            points[indexes[i]] = sim
+
+        return points
 
 
     def detect_visible_side(self, frame_shape: tuple, h_inv: tuple):
@@ -74,7 +116,7 @@ class CourtTracker:
             criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01)
         )
 
-        next_pts, st, err = cv2.calcOpticalFlowPyrLK(prev_gray, curr_gray, self.anchor_frame_pts, None)
+        next_pts, st, err = cv2.calcOpticalFlowPyrLK(prev_gray, curr_gray, self.anchor_frame_pts, None, **lk_params)
 
         good_prev = self.anchor_frame_pts[st == 1].reshape(-1, 2)
         good_next = next_pts[st == 1].reshape(-1, 2)
@@ -88,7 +130,7 @@ class CourtTracker:
 
         median_disp = np.median(displacements)  # Compute median of displacements
         mad_disp = np.median(np.abs(displacements - median_disp))  # Compute median absolute deviation
-        treshold = median_disp + 10 * mad_disp  # MODIFY THE CONSTANT FOR PRECISION
+        treshold = median_disp + 3 * mad_disp  # MODIFY THE CONSTANT FOR PRECISION
 
         for i, disp in enumerate(displacements):
             if disp > treshold:
