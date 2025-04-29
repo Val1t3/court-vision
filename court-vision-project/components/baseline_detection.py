@@ -9,58 +9,38 @@ class BaselineDetection:
 
     Attributes
     ----------
-    video_path : str
-        Path to the video file.
-    schema_path : str
-        Path to the schema file.
-    frame_points_path : str
-        Path to the frame points file.
-    schema_points_path : str
-        Path to the schema points file.
     frame : np.ndarray
         Frame image object.
     schema : np.ndarray
         Schema image object.
-    video : VideoCapture
-        Video to analyze.
+    frame_points_path : str
+        Path to the frame points file.
+    schema_points_path : str
+        Path to the schema points file.
     """
 
-    def __init__(self, schema_path: str, video_path: str
-                 , frame_points_path: str, schema_points_path: str):
+    def __init__(self, schema: np.ndarray, frame: np.ndarray,
+                 frame_points_path: str, schema_points_path: str ):
         """
         Initialize the BaselineDetection class.
 
         Parameters
         ----------
-        video_path : str
-            Path to the video file.
-        schema_path : str
-            Path to the schema file.
+        frame : np.ndarray
+            Frame image object.
+        schema : np.ndarray
+            Schema image object.
         frame_points_path : str
             Path to the frame points file.
         schema_points_path : str
             Path to the schema points file.
-        tracking_points: list
-            Points to track movement of the camera
         """
 
-        self.video_path = video_path
-        self.schema_path = schema_path
         self.frame_points = None
         self.schema_points = None
-        self.video = None
-        self.frame = None
-        self.schema = None
+        self.frame = frame
+        self.schema = schema
         self.tracking_points = []
-
-        # Load images
-        # self.frame = cv2.imread(frame_path)  # Remove?
-        self.schema = cv2.imread(schema_path)
-        self.video = cv2.VideoCapture(video_path)
-        _, self.frame = self.video.read()
-
-        if self.video is None:
-            raise ValueError("[BaselineDetection error]: couldn't load video")
 
         if self.schema is None:
             raise ValueError("[BaselineDetection error]: couldn't load schema")
@@ -68,7 +48,6 @@ class BaselineDetection:
         if self.frame is None:
             raise ValueError("[BaselineDetection error]: couldn't generate frame")
 
-        # cv2.imwrite("assets/first_frame.png", self.frame)  # Save first frame
 
         # Load points from JSON files
         with open(frame_points_path, 'r') as f:
@@ -81,8 +60,6 @@ class BaselineDetection:
         else:
             self.frame_points = np.array(frame_data, dtype=np.float32)
             self.schema_points = np.array(schema_data, dtype=np.float32)
-
-        print("[BaselineDetection] constructor ok")
 
 
     def calculate_homography(self) -> tuple:
