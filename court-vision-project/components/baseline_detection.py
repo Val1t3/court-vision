@@ -187,6 +187,66 @@ class BaselineDetection:
         return res
 
 
+    def line_identification_full_court(self, warped_img: np.ndarray) -> np.ndarray:
+        """
+        Identify lines of the full court in the warped image.
+
+        Parameters
+        ----------
+        warped_img : np.ndarray
+            The warped image.
+
+        Returns
+        -------
+        np.ndarray
+            The image with identified lines.
+        """
+        # Sidelines
+        res = self.draw_line_between_points(warped_img, self.schema_points[0], self.schema_points[16])
+        res = self.draw_line_between_points(warped_img, self.schema_points[16], self.schema_points[8])
+        res = self.draw_line_between_points(warped_img, self.schema_points[8], self.schema_points[10])
+        res = self.draw_line_between_points(warped_img, self.schema_points[10], self.schema_points[12])
+        res = self.draw_line_between_points(warped_img, self.schema_points[12], self.schema_points[15])
+        res = self.draw_line_between_points(warped_img, self.schema_points[15], self.schema_points[17])
+        res = self.draw_line_between_points(warped_img, self.schema_points[17], self.schema_points[7])
+        res = self.draw_line_between_points(warped_img, self.schema_points[7], self.schema_points[4])
+        res = self.draw_line_between_points(warped_img, self.schema_points[4], self.schema_points[2])
+        res = self.draw_line_between_points(warped_img, self.schema_points[2], self.schema_points[0])
+        res = self.draw_line_between_points(warped_img, self.schema_points[16], self.schema_points[17])
+
+        # # Sideline
+        # res = self.draw_line_between_points(warped_img, self.schema_points[0], self.schema_points[1])
+        # res = self.draw_line_between_points(res, self.schema_points[1], self.schema_points[2])
+        # res = self.draw_line_between_points(res, self.schema_points[2], self.schema_points[3])
+        # res = self.draw_line_between_points(res, self.schema_points[3], self.schema_points[0])
+
+        # # 3-pts Line
+        # res = self.draw_line_between_points(res, self.schema_points[4], self.schema_points[5])
+        # res = self.draw_line_between_points(res, self.schema_points[6], self.schema_points[7])
+        # # Half Circle
+        # center_1 = (int((self.schema_points[4][0] + self.schema_points[7][0]) / 2),
+        #             int((self.schema_points[4][1] + self.schema_points[7][1]) / 2))  # Center between points 5 and 6
+        # center = (int((center_1[0] + self.schema_points[1][0]) / 2),
+        #           int(center_1[1]))  # Center of the basket position, between axis x of center_1 and point 2
+
+        # radius = int(np.linalg.norm(np.array(self.schema_points[4]) - np.array(self.schema_points[7])) / 2)
+        # radius = radius + 5  # Need explanations for the small offset incrementation
+
+        # if (court_side == 'left'):
+        #     cv2.ellipse(res, center, (radius, radius), -100, 20, 180, (0, 255, 0), 1)
+        # elif (court_side == 'right'):
+        #     cv2.ellipse(res, center, (radius, radius), 100, 0, 160, (0, 255, 0), 1)
+        # else:
+        #     raise ValueError("[BaselineDetection error]: bad value for court_side parameter of line_identification function")
+
+        # # Lane Line
+        # res = self.draw_line_between_points(res, self.schema_points[8], self.schema_points[9])
+        # res = self.draw_line_between_points(res, self.schema_points[10], self.schema_points[11])
+        # res = self.draw_line_between_points(res, self.schema_points[11], self.schema_points[8])
+
+        return res
+
+
     def generate_points_on_line(self, point1: np.ndarray, point2: np.ndarray, num_points: int = 100) -> np.ndarray:
         """
         Generate `num_points` equally spaced points between point1 and point2.
