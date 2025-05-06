@@ -88,11 +88,11 @@ if __name__ == "__main__":
                 cv2.putText(show_frame, str(i), (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
 
 
-        cv2.imwrite(f'output/optical_flow.png', show_frame)
-        # cv2.imshow('Frame', show_frame)
+        # cv2.imwrite(f'output/optical_flow.png', show_frame)
+        cv2.imshow('Frame', show_frame)
         print(f"Side: {tracker.current_side}")
 
-        break
+        # break
 
         if cv2.waitKey(25) & 0xFF == ord('q'):
             break

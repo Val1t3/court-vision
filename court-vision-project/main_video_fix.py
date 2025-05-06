@@ -20,14 +20,42 @@ if __name__ == "__main__":
 
     # Calculate homography between frame and schema
     h, h_inv = bd.calculate_homography()
-    warped_frame = bd.warp_picture(h=h, src=bd.frame, dest=bd.schema)
 
-    # Identify lines
-    lines_frame = bd.line_identification_full_court(warped_img=warped_frame)
-    cv2.imwrite(filename="fix.png", img=lines_frame)
+    while vm.video.isOpened():
+        ret, frame = vm.video.read()
+        if not ret:
+            print("[info]: End of video.")
+            break
 
-    # Rewarp frame with detected lines
-    inv_lines = bd.warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
-    cv2.imwrite(filename="fix_inv.png", img=inv_lines)
+        # Apply baseline detection on the frame
+        bd.frame = frame.copy()
 
-    # Need to apply on each frame of the video
+        warped_frame = bd.warp_picture(h=h, src=bd.frame, dest=bd.schema)
+
+        # Identify lines
+        lines_frame = bd.line_identification_full_court(warped_img=warped_frame)
+
+        # Rewarp frame with detected lines
+        inv_lines = bd.warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
+        # cv2.imwrite(filename="fix_inv.png", img=inv_lines)
+
+        # Blend the lines with the original frame
+        blended_frame = cv2.addWeighted(inv_lines, 0.7, bd.frame, 0.5, 0)
+
+        # Resize warped_frame to match blended_frame dimensions if necessary
+        if blended_frame.shape[1] != warped_frame.shape[1]:
+            warped_frame = cv2.resize(warped_frame, (blended_frame.shape[1], blended_frame.shape[0]))
+
+        # Ensure both frames have the same type
+        if blended_frame.dtype != warped_frame.dtype:
+            warped_frame = warped_frame.astype(blended_frame.dtype)
+
+        combined_frame = cv2.vconcat([blended_frame, warped_frame])
+
+        cv2.imshow("Frame", combined_frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    vm.video.release()
+    cv2.destroyAllWindows()
