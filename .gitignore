@@ -175,3 +175,7 @@ cython_debug/
 
 # Assets
 *.mp4
+
+# Results
+fix_inv.png
+fix.png

@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import cv2
+import statistics
 
 
 class BaselineDetection:
@@ -201,24 +202,70 @@ class BaselineDetection:
         np.ndarray
             The image with identified lines.
         """
+        # Generate missing points
+        sections = []
+        sections.append(self.schema_points[3][0] - self.schema_points[2][0])
+        sections.append(self.schema_points[5][0] - self.schema_points[4][0])
+        sections.append(self.schema_points[10][0] - self.schema_points[11][0])
+        sections.append(self.schema_points[12][0] - self.schema_points[13][0])
+        mean_sec = statistics.mean(sections)
+        pix_distance = mean_sec / 5.6
+        new_point_pix = pix_distance * 2.9
+
+        np_18 = [self.schema_points[1][0] + new_point_pix, self.schema_points[1][1]]
+        self.schema_points = np.vstack([self.schema_points, np_18])
+
+        np_19 = [self.schema_points[6][0] + new_point_pix, self.schema_points[6][1]]
+        self.schema_points = np.vstack([self.schema_points, np_19])
+
+        np_20 = [self.schema_points[9][0] - new_point_pix, self.schema_points[9][1]]
+        self.schema_points = np.vstack([self.schema_points, np_20])
+
+        np_21 = [self.schema_points[14][0] - new_point_pix, self.schema_points[14][1]]
+        self.schema_points = np.vstack([self.schema_points, np_21])
+
         # Sidelines
+        # TOP
         res = self.draw_line_between_points(warped_img, self.schema_points[0], self.schema_points[16])
         res = self.draw_line_between_points(warped_img, self.schema_points[16], self.schema_points[8])
+        # RIGHT
         res = self.draw_line_between_points(warped_img, self.schema_points[8], self.schema_points[10])
         res = self.draw_line_between_points(warped_img, self.schema_points[10], self.schema_points[12])
         res = self.draw_line_between_points(warped_img, self.schema_points[12], self.schema_points[15])
+        # BOTTOM
         res = self.draw_line_between_points(warped_img, self.schema_points[15], self.schema_points[17])
         res = self.draw_line_between_points(warped_img, self.schema_points[17], self.schema_points[7])
+        # LEFT
         res = self.draw_line_between_points(warped_img, self.schema_points[7], self.schema_points[4])
         res = self.draw_line_between_points(warped_img, self.schema_points[4], self.schema_points[2])
         res = self.draw_line_between_points(warped_img, self.schema_points[2], self.schema_points[0])
+        # MID LANE
         res = self.draw_line_between_points(warped_img, self.schema_points[16], self.schema_points[17])
 
-        # # Sideline
-        # res = self.draw_line_between_points(warped_img, self.schema_points[0], self.schema_points[1])
-        # res = self.draw_line_between_points(res, self.schema_points[1], self.schema_points[2])
-        # res = self.draw_line_between_points(res, self.schema_points[2], self.schema_points[3])
-        # res = self.draw_line_between_points(res, self.schema_points[3], self.schema_points[0])
+        # Lane lines
+        # LEFT
+        res = self.draw_line_between_points(warped_img, self.schema_points[2], self.schema_points[3])
+        res = self.draw_line_between_points(warped_img, self.schema_points[3], self.schema_points[5])
+        res = self.draw_line_between_points(warped_img, self.schema_points[5], self.schema_points[4])
+        # RIGHT
+        res = self.draw_line_between_points(warped_img, self.schema_points[10], self.schema_points[11])
+        res = self.draw_line_between_points(warped_img, self.schema_points[11], self.schema_points[13])
+        res = self.draw_line_between_points(warped_img, self.schema_points[13], self.schema_points[12])
+
+        # 3-pts lines
+        res = self.draw_line_between_points(warped_img, self.schema_points[1], self.schema_points[18])
+        res = self.draw_line_between_points(warped_img, self.schema_points[6], self.schema_points[19])
+        res = self.draw_line_between_points(warped_img, self.schema_points[9], self.schema_points[20])
+        res = self.draw_line_between_points(warped_img, self.schema_points[14], self.schema_points[21])
+
+
+        # 1, 6 -> + 2.90m
+        # 9, 14 -> -2.90m
+
+        # 3-pts Lines
+        # 1. Find the size of 2.90m
+        # 2. Generate 4 points at 2.90m of 3pts-sideline
+        # 3. Calculate circle draws
 
         # # 3-pts Line
         # res = self.draw_line_between_points(res, self.schema_points[4], self.schema_points[5])
@@ -238,11 +285,6 @@ class BaselineDetection:
         #     cv2.ellipse(res, center, (radius, radius), 100, 0, 160, (0, 255, 0), 1)
         # else:
         #     raise ValueError("[BaselineDetection error]: bad value for court_side parameter of line_identification function")
-
-        # # Lane Line
-        # res = self.draw_line_between_points(res, self.schema_points[8], self.schema_points[9])
-        # res = self.draw_line_between_points(res, self.schema_points[10], self.schema_points[11])
-        # res = self.draw_line_between_points(res, self.schema_points[11], self.schema_points[8])
 
         return res
 
