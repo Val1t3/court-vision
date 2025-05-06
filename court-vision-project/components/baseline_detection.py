@@ -211,6 +211,7 @@ class BaselineDetection:
         mean_sec = statistics.mean(sections)
         pix_distance = mean_sec / 5.6
         new_point_pix = pix_distance * 2.9
+        new_bask_pix = pix_distance * 1.2
 
         np_18 = [self.schema_points[1][0] + new_point_pix, self.schema_points[1][1]]
         self.schema_points = np.vstack([self.schema_points, np_18])
@@ -223,6 +224,13 @@ class BaselineDetection:
 
         np_21 = [self.schema_points[14][0] - new_point_pix, self.schema_points[14][1]]
         self.schema_points = np.vstack([self.schema_points, np_21])
+
+        left_bask = [((self.schema_points[2][0] + self.schema_points[4][0]) / 2) + new_bask_pix, self.schema_points[2][1] + ((self.schema_points[4][1] - self.schema_points[2][1]) / 2)]
+        self.schema_points = np.vstack([self.schema_points, left_bask])
+
+        right_bask = [((self.schema_points[10][0] + self.schema_points[12][0]) / 2) - new_bask_pix, self.schema_points[10][1] + ((self.schema_points[12][1] - self.schema_points[10][1]) / 2)]
+        self.schema_points = np.vstack([self.schema_points, right_bask])
+
 
         # Sidelines
         # TOP
@@ -258,33 +266,18 @@ class BaselineDetection:
         res = self.draw_line_between_points(warped_img, self.schema_points[9], self.schema_points[20])
         res = self.draw_line_between_points(warped_img, self.schema_points[14], self.schema_points[21])
 
+        radius_left = int(np.linalg.norm(np.array(self.schema_points[18]) - np.array(self.schema_points[19])) / 2)
+        radius_left = radius_left + 5  # Need explanations for the small offset incrementation
 
-        # 1, 6 -> + 2.90m
-        # 9, 14 -> -2.90m
+        radius_right = int(np.linalg.norm(np.array(self.schema_points[20]) - np.array(self.schema_points[21])) / 2)
+        radius_right = radius_right + 5  # Need explanations for the small offset incrementation
 
-        # 3-pts Lines
-        # 1. Find the size of 2.90m
-        # 2. Generate 4 points at 2.90m of 3pts-sideline
-        # 3. Calculate circle draws
+        # Half Circle
+        center_left = tuple(map(int, self.schema_points[22]))
+        cv2.ellipse(res, center_left, (radius_left, radius_left), -100, 20, 180, (0, 255, 0), 1)
 
-        # # 3-pts Line
-        # res = self.draw_line_between_points(res, self.schema_points[4], self.schema_points[5])
-        # res = self.draw_line_between_points(res, self.schema_points[6], self.schema_points[7])
-        # # Half Circle
-        # center_1 = (int((self.schema_points[4][0] + self.schema_points[7][0]) / 2),
-        #             int((self.schema_points[4][1] + self.schema_points[7][1]) / 2))  # Center between points 5 and 6
-        # center = (int((center_1[0] + self.schema_points[1][0]) / 2),
-        #           int(center_1[1]))  # Center of the basket position, between axis x of center_1 and point 2
-
-        # radius = int(np.linalg.norm(np.array(self.schema_points[4]) - np.array(self.schema_points[7])) / 2)
-        # radius = radius + 5  # Need explanations for the small offset incrementation
-
-        # if (court_side == 'left'):
-        #     cv2.ellipse(res, center, (radius, radius), -100, 20, 180, (0, 255, 0), 1)
-        # elif (court_side == 'right'):
-        #     cv2.ellipse(res, center, (radius, radius), 100, 0, 160, (0, 255, 0), 1)
-        # else:
-        #     raise ValueError("[BaselineDetection error]: bad value for court_side parameter of line_identification function")
+        center_right = tuple(map(int, self.schema_points[23]))
+        cv2.ellipse(res, center_right, (radius_right, radius_right), 100, 0, 160, (0, 255, 0), 1)
 
         return res
 
