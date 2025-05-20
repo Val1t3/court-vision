@@ -13,7 +13,7 @@ fonttools==4.56.0
 fsspec==2025.2.0
 idna==3.10
 ipykernel==6.29.5
-ipython==9.0.1
+ipython
 ipython_pygments_lexers==1.1.1
 jedi==0.19.2
 Jinja2==3.1.6

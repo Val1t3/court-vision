@@ -1,5 +1,7 @@
-from components import VideoManager, BaselineDetection
+from baseline_detection import BaselineDetection
+from video_manager import VideoManager
 import cv2
+
 
 if __name__ == "__main__":
     print("START FIX VIDEO")

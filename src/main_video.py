@@ -1,4 +1,6 @@
-from components import BaselineDetection, CourtTracker, VideoManager
+from baseline_detection import BaselineDetection
+from court_tracker import CourtTracker
+from video_manager import VideoManager
 import cv2
 import numpy as np
 

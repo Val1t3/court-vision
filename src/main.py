@@ -1,4 +1,4 @@
-from components import BaselineDetection
+from baseline_detection import BaselineDetection
 import matplotlib.pyplot as plt
 import cv2
 
