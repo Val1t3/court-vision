@@ -1,5 +1,6 @@
 import cv2
 
+
 class VideoManager:
     """
     A class used to managed images and video.

@@ -2,9 +2,11 @@ import cv2
 import json
 import sys
 
+
 # Initialize global variables
 points = []
 window_name = "Point Mapping Tool"
+
 
 def click_event(event, x, y, flags, param):
     """Handle mouse clicks to record points."""
@@ -19,11 +21,13 @@ def click_event(event, x, y, flags, param):
         cv2.putText(image_copy, f"{len(points) - 1}", (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
         cv2.imshow(window_name, image_copy)
 
+
 def save_points(points, output_file="points.json"):
     """Save recorded points to a JSON file."""
     with open(output_file, "w") as file:
         json.dump(points, file, indent=4)
     print(f"Points saved to {output_file}")
+
 
 def load_points(input_file="points.json"):
     """Load previously saved points from a JSON file."""
@@ -33,6 +37,7 @@ def load_points(input_file="points.json"):
     except FileNotFoundError:
         print("No previous points found. Starting fresh.")
         return []
+
 
 def run_point_mapping_tool(image_path, output_file="points.json"):
     """
