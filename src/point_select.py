@@ -61,13 +61,24 @@ def click_event(event: int, x: int, y: int, flags: int, param: any):
 
     mouse_pos = [x, y]
 
+    if event == cv2.EVENT_LBUTTONDOWN:
+        points.append([x, y])
+        print(points)
+
 
 def draw_mouse_position(x: int, y: int):
+    """
+    Function to display on the image the actual position of the mouse.
+
+    Parameters:
+        x (int): X postion of the mouse
+        y (int): Y position of the mouse
+    """
     global image
 
     text_pos = str(x) + ", " + str(y)
 
-    image = cv2.putText(
+    cv2.putText(
         img=image,
         text=text_pos,
         org=(50, 50),
@@ -79,9 +90,47 @@ def draw_mouse_position(x: int, y: int):
     )
 
 
+def draw_points(points: list):
+    """
+    Function to display `points` on the image with the id of each one.
+
+    Parameters:
+        points (list): List of all points
+    """
+    for i, pt in enumerate(points):
+        cv2.circle(
+            img=image,
+            center=(pt[0], pt[1]),
+            radius=5,
+            color=(0, 0, 255),  # BGR
+            thickness=-1
+        )
+        cv2.putText(
+            img=image,
+            text=str(i),
+            org=(pt[0] - 10, pt[1] - 20),
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=1,
+            color=(0, 0, 255),  # BGR
+            thickness=2,
+            lineType=cv2.LINE_AA
+        )
+
+
+def help():
+    # TODO: write content of help() function
+    print("#####################################")
+    print("Court Vision - Point Selection Tool")
+
+
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        sys.exit("error: Missing arguments")
+    print(len(sys.argv))
+    if sys.argv[1] == "-h":
+        help()
+        sys.exit()
+    elif len(sys.argv) != 3:
+        help()
+        sys.exit(1)
 
     load(img_path=sys.argv[1], pts_path=sys.argv[2])
 
@@ -93,11 +142,17 @@ if __name__ == '__main__':
         image = img.copy()
 
         draw_mouse_position(x=mouse_pos[0], y=mouse_pos[1])
+        draw_points(points=points)
         cv2.imshow(winname=win_name, mat=image)
 
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord('q'):
+        # Remove last point
+        if key == ord('z') and len(points) > 0:
+            points.pop()
+
+        # Quit program
+        elif key == ord('q'):
             break
 
     cv2.destroyAllWindows()
