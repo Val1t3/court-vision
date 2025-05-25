@@ -71,9 +71,10 @@ def draw_mouse_position(x: int, y: int):
     Function to display on the image the actual position of the mouse.
 
     Parameters:
-        x (int): X postion of the mouse
+        x (int): X position of the mouse
         y (int): Y position of the mouse
     """
+
     global image
 
     text_pos = str(x) + ", " + str(y)
@@ -90,14 +91,16 @@ def draw_mouse_position(x: int, y: int):
     )
 
 
-def draw_points(points: list):
+def draw_points(point_list: list):
     """
     Function to display `points` on the image with the id of each one.
 
     Parameters:
-        points (list): List of all points
+        point_list (list): List of all points
     """
-    for i, pt in enumerate(points):
+
+    for i, pt in enumerate(point_list):
+        # Draw point
         cv2.circle(
             img=image,
             center=(pt[0], pt[1]),
@@ -105,6 +108,7 @@ def draw_points(points: list):
             color=(0, 0, 255),  # BGR
             thickness=-1
         )
+        # Draw index
         cv2.putText(
             img=image,
             text=str(i),
@@ -117,7 +121,7 @@ def draw_points(points: list):
         )
 
 
-def help():
+def help_manager():
     # TODO: write content of help() function
     print("#####################################")
     print("Court Vision - Point Selection Tool")
@@ -126,23 +130,23 @@ def help():
 if __name__ == '__main__':
     print(len(sys.argv))
     if sys.argv[1] == "-h":
-        help()
+        help_manager()
         sys.exit()
     elif len(sys.argv) != 3:
-        help()
+        help_manager()
         sys.exit(1)
 
     load(img_path=sys.argv[1], pts_path=sys.argv[2])
 
     image = img.copy()
     cv2.imshow(winname=win_name, mat=image)
-    cv2.setMouseCallback(window_name=win_name, on_mouse=click_event)
+    cv2.setMouseCallback(win_name, click_event)
 
     while True:
         image = img.copy()
 
         draw_mouse_position(x=mouse_pos[0], y=mouse_pos[1])
-        draw_points(points=points)
+        draw_points(point_list=points)
         cv2.imshow(winname=win_name, mat=image)
 
         key = cv2.waitKey(1) & 0xFF
