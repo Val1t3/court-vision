@@ -3,7 +3,7 @@ import cv2
 
 class VideoManager:
     """
-    A class used to managed images and video.
+    A class used to manage images and video.
 
     Attributes
     ----------
@@ -13,6 +13,17 @@ class VideoManager:
     """
 
     def __init__(self, video_path: str, schema_path: str):
+        """
+        Initialize the VideoManager class.
+
+        Parameters
+        ----------
+        video_path : str
+            Path to the video file.
+        schema_path : str
+            Path to the schema file.
+        """
+
         self.video = None
         self.first_frame = None
         self.schema = None
