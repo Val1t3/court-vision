@@ -4,11 +4,11 @@ import cv2
 
 
 # Global variables
-win_name = "Court Vision - Point Selection"
-points = []
-img = None
-image = None
-mouse_pos = [0, 0]
+win_name: str = "Court Vision - Point Selection"
+points: list = []
+img: cv2.Mat | None = None
+image: cv2.Mat | None = None
+mouse_pos: list = [0, 0]
 
 
 def load(img_path: str, pts_path: str):
@@ -59,25 +59,21 @@ def click_event(event: int, x: int, y: int, flags: int, param: any):
 
     global mouse_pos
 
-    mouse_pos = [x, y]
+    if event == cv2.EVENT_MOUSEMOVE:
+        mouse_pos = [x, y]
 
     if event == cv2.EVENT_LBUTTONDOWN:
         points.append([x, y])
-        print(points)
 
 
-def draw_mouse_position(x: int, y: int):
+def draw_mouse_position():
     """
     Function to display on the image the actual position of the mouse.
-
-    Parameters:
-        x (int): X position of the mouse
-        y (int): Y position of the mouse
     """
 
     global image
 
-    text_pos = str(x) + ", " + str(y)
+    text_pos = str(mouse_pos[0]) + ", " + str(mouse_pos[1])
 
     cv2.putText(
         img=image,
@@ -91,15 +87,12 @@ def draw_mouse_position(x: int, y: int):
     )
 
 
-def draw_points(point_list: list):
+def draw_points():
     """
-    Function to display `points` on the image with the id of each one.
-
-    Parameters:
-        point_list (list): List of all points
+    Function to draw every item of `points` on the image with the id of each one.
     """
 
-    for i, pt in enumerate(point_list):
+    for i, pt in enumerate(points):
         # Draw point
         cv2.circle(
             img=image,
@@ -108,6 +101,7 @@ def draw_points(point_list: list):
             color=(0, 0, 255),  # BGR
             thickness=-1
         )
+
         # Draw index
         cv2.putText(
             img=image,
@@ -121,14 +115,51 @@ def draw_points(point_list: list):
         )
 
 
+def control_manager() -> int:
+    """
+    Function to handle keyboard controls.
+
+    Returns:
+         int
+    """
+
+    key = cv2.waitKey(1) & 0xFF
+
+    # Remove last point
+    if key == ord('z') and len(points) > 0:
+        points.pop()
+        return 0
+    # Zoom in
+    elif key == ord('i'):
+        print("zoom in")
+        return 0
+    # Zoom out
+    elif key == ord('o'):
+        print("zoom out")
+        return 0
+    # Quit program
+    elif key == ord('q'):
+        return 1
+    # Default
+    return 0
+
+
 def help_manager():
-    # TODO: write content of help() function
-    print("#####################################")
+    """
+    Function to display help information to use the script.
+    """
+
     print("Court Vision - Point Selection Tool")
+    print("Controls:")
+    print("\tleft click: create new point")
+    print("\tz: remove last point")
+    print("\ti: zoom in")
+    print("\to: zoom out")
+    print("\tq: quit without saving")
+    print("\ts: save and quit")
 
 
 if __name__ == '__main__':
-    print(len(sys.argv))
     if sys.argv[1] == "-h":
         help_manager()
         sys.exit()
@@ -145,18 +176,11 @@ if __name__ == '__main__':
     while True:
         image = img.copy()
 
-        draw_mouse_position(x=mouse_pos[0], y=mouse_pos[1])
-        draw_points(point_list=points)
+        draw_mouse_position()
+        draw_points()
         cv2.imshow(winname=win_name, mat=image)
 
-        key = cv2.waitKey(1) & 0xFF
-
-        # Remove last point
-        if key == ord('z') and len(points) > 0:
-            points.pop()
-
-        # Quit program
-        elif key == ord('q'):
+        if control_manager() == 1:
             break
 
     cv2.destroyAllWindows()
