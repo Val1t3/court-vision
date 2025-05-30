@@ -1,4 +1,4 @@
-from baseline_detection import BaselineDetection
+from baseline_detection import BaselineDetection, warp_picture
 from video_manager import VideoManager
 import cv2
 
@@ -12,7 +12,7 @@ if __name__ == "__main__":
         schema_path="assets/schema.png"
     )
 
-    # Init baseline detection thanks to the first frame and given points
+    # Init baseline detection
     bd = BaselineDetection(
         schema=vm.schema,
         frame=vm.first_frame,
@@ -31,14 +31,13 @@ if __name__ == "__main__":
 
         # Apply baseline detection on the frame
         bd.frame = frame.copy()
-
-        warped_frame = bd.warp_picture(h=h, src=bd.frame, dest=bd.schema)
+        warped_frame = warp_picture(h=h, src=bd.frame, dest=bd.schema)
 
         # Identify lines
         lines_frame = bd.line_identification_full_court(warped_img=warped_frame)
 
         # Rewarp frame with detected lines
-        inv_lines = bd.warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
+        inv_lines = warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
         # cv2.imwrite(filename="fix_inv.png", img=inv_lines)
 
         # Blend the lines with the original frame

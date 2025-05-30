@@ -1,4 +1,4 @@
-from baseline_detection import BaselineDetection
+from baseline_detection import BaselineDetection, warp_picture
 import matplotlib.pyplot as plt
 import cv2
 
@@ -14,14 +14,14 @@ if __name__ == "__main__":
     )
 
     h, h_inv = bd.calculate_homography()  # Calculate homography between frame and schema
-    warped_res = bd.warp_picture(h, bd.frame, bd.schema)  # Create warped frame
-    res = bd.line_identification(warped_res, 'right')  # Apply line indentification on the warped frame
+    warped_res = warp_picture(h, bd.frame, bd.schema)  # Create warped frame
+    res = bd.line_identification(warped_res, 'right')  # Apply line identification on the warped frame
     bd.generate_tracking_points()  # Generate points on the detected lines for the tracking management
     for pt in bd.tracking_points:
         cv2.circle(warped_res, (int(pt[0]), int(pt[1])), 2, (0, 0, 255), -1)
 
 
-    new_res = bd.warp_picture(h_inv, res, bd.frame)  # Warp frame with inv. homography
+    new_res = warp_picture(h_inv, res, bd.frame)  # Warp frame with inv. homography
 
 
 
