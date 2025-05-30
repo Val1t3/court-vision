@@ -9,7 +9,7 @@ points: list = []
 img: cv2.Mat | None = None
 image: cv2.Mat | None = None
 mouse_pos: list = [0, 0]
-
+zoom_scale: float = 1.0
 
 def load(img_path: str, pts_path: str):
     """
@@ -115,6 +115,17 @@ def draw_points():
         )
 
 
+def zoom_on_click():
+    global image
+
+    h, w = img.shape[:2]
+
+    new_h = int(h * zoom_scale)
+    new_w = int(w * zoom_scale)
+
+    image = cv2.resize(src=image, dsize=(new_w, new_h))
+
+
 def control_manager() -> int:
     """
     Function to handle keyboard controls.
@@ -122,6 +133,8 @@ def control_manager() -> int:
     Returns:
          int
     """
+
+    global zoom_scale
 
     key = cv2.waitKey(1) & 0xFF
 
@@ -131,11 +144,13 @@ def control_manager() -> int:
         return 0
     # Zoom in
     elif key == ord('i'):
-        print("zoom in")
+        zoom_scale = min(float(zoom_scale + 0.1), 5.0)
+        print("zoom in", zoom_scale)
         return 0
     # Zoom out
     elif key == ord('o'):
-        print("zoom out")
+        zoom_scale = max(float(zoom_scale - 0.1), 1.0)
+        print("zoom out", zoom_scale)
         return 0
     # Quit program
     elif key == ord('q'):
@@ -176,6 +191,7 @@ if __name__ == '__main__':
     while True:
         image = img.copy()
 
+        zoom_on_click()
         draw_mouse_position()
         draw_points()
         cv2.imshow(winname=win_name, mat=image)
