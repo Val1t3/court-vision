@@ -126,9 +126,12 @@ def zoom_on_click():
     image = cv2.resize(src=image, dsize=(new_w, new_h))
 
 
-def control_manager() -> int:
+def control_manager(pts_path: str) -> int:
     """
     Function to handle keyboard controls.
+
+    Parameters:
+        pts_path (str) : Path to the point file.
 
     Returns:
          int
@@ -151,6 +154,11 @@ def control_manager() -> int:
     elif key == ord('o'):
         zoom_scale = max(float(zoom_scale - 0.1), 1.0)
         print("zoom out", zoom_scale)
+        return 0
+    # Save
+    elif key == ord('s'):
+        with open(file=pts_path, mode="w") as f:
+            json.dump(obj=points, fp=f, indent=4)
         return 0
     # Quit program
     elif key == ord('q'):
@@ -196,7 +204,7 @@ if __name__ == '__main__':
         draw_points()
         cv2.imshow(winname=win_name, mat=image)
 
-        if control_manager() == 1:
+        if control_manager(pts_path=sys.argv[2]) == 1:
             break
 
     cv2.destroyAllWindows()
