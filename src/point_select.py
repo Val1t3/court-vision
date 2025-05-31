@@ -159,6 +159,7 @@ def control_manager(pts_path: str) -> int:
     elif key == ord('s'):
         with open(file=pts_path, mode="w") as f:
             json.dump(obj=points, fp=f, indent=4)
+        print(f"Points saved to {pts_path}.")
         return 0
     # Quit program
     elif key == ord('q'):
