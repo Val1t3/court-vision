@@ -11,13 +11,14 @@ class Show(Enum):
     ALL = 0  # Show all
     BLENDED = 1  # Show video with lines
     WARPED = 2  # Show warped video to schema with lines
+    SCHEMA = 3  # Show schema reproduction
 
 
 if __name__ == "__main__":
     print("START FIX VIDEO")
 
     # Constant
-    show = Show.WARPED
+    show = Show.ALL
     win_name = "Court Vision - Baseline Detection"
 
     # Init VideoManager
@@ -56,22 +57,26 @@ if __name__ == "__main__":
         # Blend the lines with the original frame
         blended_frame = cv2.addWeighted(inv_lines, 0.7, bd.frame, 0.5, 0)
 
-        # Resize warped_frame to match blended_frame dimensions if necessary
-        if blended_frame.shape[1] != warped_frame.shape[1]:
-            warped_frame = cv2.resize(warped_frame, (blended_frame.shape[1], blended_frame.shape[0]))
+        # Resize for concat
+        warped_frame = cv2.resize(warped_frame, (blended_frame.shape[1], blended_frame.shape[0]))
+        schema_frame = cv2.resize(vm.schema, (blended_frame.shape[1], blended_frame.shape[0]))
 
         # Ensure both frames have the same type
         if blended_frame.dtype != warped_frame.dtype:
             warped_frame = warped_frame.astype(blended_frame.dtype)
+        if blended_frame.dtype != schema_frame.dtype:
+            schema_frame = schema_frame.astype(blended_frame.dtype)
 
         # What displays on screen
         if show == Show.ALL:
-            combined_frame = cv2.vconcat([blended_frame, warped_frame])
+            combined_frame = cv2.vconcat([blended_frame, warped_frame, schema_frame])
             cv2.imshow(win_name, combined_frame)
         elif show == Show.BLENDED:
             cv2.imshow(win_name, blended_frame)
         elif show == Show.WARPED:
             cv2.imshow(win_name, warped_frame)
+        elif show == Show.SCHEMA:
+            cv2.imshow(win_name, schema_frame)
 
         # Control Manager
         if cv2.waitKey(1) & 0xFF == ord('q'):
