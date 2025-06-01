@@ -1,10 +1,24 @@
 from baseline_detection import BaselineDetection, warp_picture
 from video_manager import VideoManager
 import cv2
+from enum import Enum
+
+
+class Show(Enum):
+    """
+    Class used to choose what type of analysis to display.
+    """
+    ALL = 0  # Show all
+    BLENDED = 1  # Show video with lines
+    WARPED = 2  # Show warped video to schema with lines
 
 
 if __name__ == "__main__":
     print("START FIX VIDEO")
+
+    # Constant
+    show = Show.WARPED
+    win_name = "Court Vision - Baseline Detection"
 
     # Init VideoManager
     vm = VideoManager(
@@ -12,7 +26,7 @@ if __name__ == "__main__":
         schema_path="assets/schema.png"
     )
 
-    # Init baseline detection
+    # Init BaselineDetection
     bd = BaselineDetection(
         schema=vm.schema,
         frame=vm.first_frame,
@@ -38,7 +52,6 @@ if __name__ == "__main__":
 
         # Rewarp frame with detected lines
         inv_lines = warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
-        # cv2.imwrite(filename="fix_inv.png", img=inv_lines)
 
         # Blend the lines with the original frame
         blended_frame = cv2.addWeighted(inv_lines, 0.7, bd.frame, 0.5, 0)
@@ -51,12 +64,21 @@ if __name__ == "__main__":
         if blended_frame.dtype != warped_frame.dtype:
             warped_frame = warped_frame.astype(blended_frame.dtype)
 
-        combined_frame = cv2.vconcat([blended_frame, warped_frame])
+        # What displays on screen
+        if show == Show.ALL:
+            combined_frame = cv2.vconcat([blended_frame, warped_frame])
+            cv2.imshow(win_name, combined_frame)
+        elif show == Show.BLENDED:
+            cv2.imshow(win_name, blended_frame)
+        elif show == Show.WARPED:
+            cv2.imshow(win_name, warped_frame)
 
-        cv2.imshow("Frame", combined_frame)
-
+        # Control Manager
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+        if cv2.waitKey(1) & 0xFF == ord('s'):
+            cv2.imwrite('output/screen.png', warped_frame)
+            print("take screenshot")
 
     vm.video.release()
     cv2.destroyAllWindows()

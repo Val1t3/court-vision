@@ -174,6 +174,8 @@ def help_manager():
     """
 
     print("Court Vision - Point Selection Tool")
+    print("Run:")
+    print("\tpython point_select.py `frame_path` `point_path`")
     print("Controls:")
     print("\tleft click: create new point")
     print("\tz: remove last point")
@@ -184,12 +186,12 @@ def help_manager():
 
 
 if __name__ == '__main__':
-    if sys.argv[1] == "-h":
-        help_manager()
-        sys.exit()
-    elif len(sys.argv) != 3:
+    if len(sys.argv) != 3:
         help_manager()
         sys.exit(1)
+    elif sys.argv[1] == "-h":
+        help_manager()
+        sys.exit()
 
     load(img_path=sys.argv[1], pts_path=sys.argv[2])
 
