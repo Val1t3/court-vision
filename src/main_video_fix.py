@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # Init VideoManager
     vm = VideoManager(
         video_path="assets/extract-2.mp4",
-        schema_path="assets/schema.png"
+        schema_path="assets/cropped_schema.png"
     )
 
     # Init BaselineDetection
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         schema=vm.schema,
         frame=vm.first_frame,
         frame_points_path="data/frame_points_fix.json",
-        schema_points_path="data/schema_points_fix.json"
+        schema_points_path="data/points_cropped_schema.json"
     )
 
     # Calculate homography between frame and schema

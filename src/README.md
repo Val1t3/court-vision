@@ -25,3 +25,9 @@ python main_video_fix.py
 ```
 
 ---
+
+## Player Detection
+
+```bash
+yolo task=detect mode=predict source="assets/extract-3.mp4" model=yolov8s.pt show=True
+```
