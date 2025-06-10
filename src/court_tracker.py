@@ -1,3 +1,6 @@
+# court-vision/src, court_tracker.py
+# Code written by Valentin Woehrel, 2025
+
 import numpy as np
 import cv2
 

@@ -1,3 +1,6 @@
+# court-vision/src, point_select.py
+# Code written by Valentin Woehrel, 2025
+
 import json
 import sys
 import cv2

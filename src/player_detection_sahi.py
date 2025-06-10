@@ -1,3 +1,6 @@
+# court-vision/src, player_detection_sahi.py
+# Code written by Valentin Woehrel, 2025
+
 from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 from sahi.utils.cv import visualize_object_predictions

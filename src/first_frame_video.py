@@ -1,3 +1,6 @@
+# court-vision/src, first_frame_video.py
+# Code written by Valentin Woehrel, 2025
+
 import cv2
 import sys
 

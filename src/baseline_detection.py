@@ -1,3 +1,6 @@
+# court-vision/src, baseline_detection.py
+# Code written by Valentin Woehrel, 2025
+
 import json
 import numpy as np
 import cv2

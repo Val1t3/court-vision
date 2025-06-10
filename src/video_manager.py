@@ -1,3 +1,6 @@
+# court-vision/src, video_manager.py
+# Code written by Valentin Woehrel, 2025
+
 import cv2
 
 

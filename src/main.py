@@ -1,3 +1,6 @@
+# court-vision/src, main.py
+# Code written by Valentin Woehrel, 2025
+
 from baseline_detection import BaselineDetection, warp_picture
 import matplotlib.pyplot as plt
 import cv2

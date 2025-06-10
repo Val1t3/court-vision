@@ -1,3 +1,6 @@
+# court-vision/src, player_detection.py
+# Code written by Valentin Woehrel, 2025
+
 from ultralytics import YOLO
 import cv2
 

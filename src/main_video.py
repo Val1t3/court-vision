@@ -1,3 +1,6 @@
+# court-vision/src, main_video.py
+# Code written by Valentin Woehrel, 2025
+
 from baseline_detection import BaselineDetection
 from court_tracker import CourtTracker
 from video_manager import VideoManager

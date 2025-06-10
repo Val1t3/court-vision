@@ -1,3 +1,6 @@
+# court-vision/src, main_video_fix.py
+# Code written by Valentin Woehrel, 2025
+
 from baseline_detection import BaselineDetection, warp_picture
 from video_manager import VideoManager
 import cv2
