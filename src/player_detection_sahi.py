@@ -5,6 +5,9 @@ from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 from sahi.utils.cv import visualize_object_predictions
 import cv2
+import argparse
+import json
+import numpy as np
 
 
 # TODO:
@@ -15,14 +18,37 @@ import cv2
 
 
 # constants
-asset = "assets/frame.png"
+version = "v11n"
+
 video = "assets/extract-3.mp4"
-model = "models/yolov11n.pt"
-output = "output/player-detection-v11n.mp4"
+model = "models/yolo" + version +".pt"
+output = "output/player-detection-" + version + ".mp4"
 show = True
 
+points = []
+# 0: top-left
+# 7: bottom-left
+# 8: top-right
+# 15: bottom-right
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
+    # parse arguments
+    parser = argparse.ArgumentParser(description="Process input file")
+    parser.add_argument('--points', type=str, required=False, help="Coordinates" \
+    "of court points")
+
+    args = parser.parse_args()
+
+    # if points file given, open it and store coord in `points` variable
+    if args.points:
+        try:
+            with open(args.points, 'r') as f:
+                points = np.array(json.load(f), dtype=np.float64).tolist()
+        except:
+            print("error: Impossible to open points file.")
+            exit(1)
+
     # create model detection
     model = AutoDetectionModel.from_pretrained(
         model_type="ultralytics",
@@ -64,10 +90,29 @@ if __name__ == '__main__':
             if item.category.name == "person"
         ]
 
+        # filter keeping boxes in court ares only
+        if args.points:
+            # margin = ((points[12][1] - points[10][1])
+            #           + (points[4][1] - points[2][1])) / 2
+            margin = 0
+
+            # filter boxes not in the court area + margin
+            filtered_pred = []
+            for i in result.object_prediction_list:
+                # convert bbox into 4 points
+                bbox = i.bbox
+                minx, miny, maxx, maxy = bbox.minx, bbox.miny, bbox.maxx, bbox.maxy
+
+                if (miny < max(points[7][1], points[15][1])
+                    and maxy > min(points[0][1], points[8][0])
+                    and minx < max(points[8][0], points[15][0])
+                    and maxx > min(points[0][0], points[7][0])):
+                    filtered_pred.append(i)
+
         # draw on image detected persons
         res = visualize_object_predictions(
             image=frame,
-            object_prediction_list=result.object_prediction_list,
+            object_prediction_list=filtered_pred,
             rect_th=2,
             text_size=1,
             text_th=1

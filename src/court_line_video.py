@@ -1,4 +1,4 @@
-# court-vision/src, main_video.py
+# court-vision/src, court_line_video.py
 # Code written by Valentin Woehrel, 2025
 
 from baseline_detection import BaselineDetection
