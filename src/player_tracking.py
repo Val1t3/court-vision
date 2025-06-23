@@ -8,6 +8,7 @@ import cv2
 import argparse
 import json
 import numpy as np
+from deep_sort_realtime.deepsort_tracker import DeepSort
 
 
 # TODO:
@@ -22,7 +23,7 @@ version = "v11n"
 
 video = "assets/extract-4.mp4"
 model = "models/yolo" + version +".pt"
-output = "output/player-detection-" + version + ".mp4"
+output = "output/player-tracking-" + version + ".mp4"
 show = True
 
 points = []
@@ -57,6 +58,9 @@ if __name__ == "__main__":
         device="cpu",
     )
 
+    # create tracker
+    tracker = DeepSort(max_age=10)
+
     # open the input video
     cap = cv2.VideoCapture(video)
 
@@ -90,6 +94,8 @@ if __name__ == "__main__":
             if item.category.name == "person"
         ]
 
+        detections = []
+
         # filter keeping boxes in court ares only
         if args.points:
             # margin = ((points[12][1] - points[10][1])
@@ -108,24 +114,47 @@ if __name__ == "__main__":
                     and minx < max(points[8][0], points[15][0])
                     and maxx > min(points[0][0], points[7][0])):
                     filtered_pred.append(i)
+                    # add item for the tracker
+                    detections.append(([minx, miny, maxx - minx, maxy - miny], i.score.value, 'person'))
 
             result.object_prediction_list = filtered_pred
 
-        # draw on image detected persons
-        res = visualize_object_predictions(
-            image=frame,
-            object_prediction_list=result.object_prediction_list,
-            rect_th=2,
-            text_size=1,
-            text_th=1
-        )
+        else:
+            for i in result.object_prediction_list:
+                # convert bbox into 4 points
+                bbox = i.bbox
+                minx, miny, maxx, maxy = bbox.minx, bbox.miny, bbox.maxx, bbox.maxy
+                detections.append(([minx, miny, maxx - minx, maxy - miny], i.score.value, 'person'))
+
+        tracks = tracker.update_tracks(raw_detections=detections, frame=frame)
+
+        # # draw on image detected persons
+        # res = visualize_object_predictions(
+        #     image=frame,
+        #     object_prediction_list=result.object_prediction_list,
+        #     rect_th=2,
+        #     text_size=1,
+        #     text_th=1
+        # )
+
+        for track in tracks:
+            if not track.is_confirmed():
+                continue
+            track_id = track.track_id
+            ltrb = track.to_ltrb()  # left, top, right, bottom
+            x1, y1, x2, y2 = map(int, ltrb)
+
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, f"ID {track_id}", (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
         # show frame (optional)
         if show is True:
-            cv2.imshow("SAHI Player Detection", res["image"])
-
+            # cv2.imshow("SAHI Player Detection", res["image"])
+            cv2.imshow("SAHI Player Detection", frame)
         # write the frame to the output video
-        out.write(res["image"])
+        # out.write(res["image"])
+        out.write(frame)
 
         # press 'q' to exit early
         if cv2.waitKey(1) & 0xFF == ord('q'):
