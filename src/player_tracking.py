@@ -19,7 +19,7 @@ from deep_sort_realtime.deepsort_tracker import DeepSort
 
 
 # constants
-version = "v11n"
+version = "11n"
 
 video = "assets/extract-4.mp4"
 model = "models/yolo" + version +".pt"

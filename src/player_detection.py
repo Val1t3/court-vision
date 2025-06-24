@@ -7,7 +7,7 @@ import cv2
 
 if __name__ == '__main__':
     # Load yolo model
-    model = YOLO("models/yolov8m.pt")
+    model = YOLO("models/yolo8m.pt")
 
     # Open the input video
     cap = cv2.VideoCapture("assets/extract-3.mp4")
