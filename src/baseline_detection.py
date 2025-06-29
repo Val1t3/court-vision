@@ -89,8 +89,12 @@ class BaselineDetection:
         Points of schema.
     """
 
-    def __init__(self, schema: np.ndarray, frame: np.ndarray,
-                 frame_points_path: str, schema_points_path: str ):
+    def __init__(self,
+                 schema: np.ndarray = None,
+                 frame: np.ndarray = None,
+                 frame_points_path: str = None,
+                 schema_points_path: str = None
+        ):
         """
         Initialize the BaselineDetection class.
 
@@ -105,19 +109,16 @@ class BaselineDetection:
         schema_points_path : str
             Path to the schema points file.
         """
-
-        self.frame_points = None
-        self.schema_points = None
         self.frame = frame
         self.schema = schema
         self.tracking_points = []
 
         # Load frames
-        if self.schema is None:
-            raise ValueError("[BaselineDetection error]: couldn't load schema")
+        # if self.schema is None:
+        #     raise ValueError("[BaselineDetection error]: couldn't load schema")
 
-        if self.frame is None:
-            raise ValueError("[BaselineDetection error]: couldn't generate frame")
+        # if self.frame is None:
+        #     raise ValueError("[BaselineDetection error]: couldn't generate frame")
 
         # Load points from JSON files
         with open(frame_points_path, 'r') as f:
