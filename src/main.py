@@ -2,12 +2,12 @@
 # Code written by Valentin Woehrel, 2025
 
 from baseline_detection import BaselineDetection
-from ultralytics import YOLO
 from ultralytics.engine.results import Results
 import csv
 from typing import List
 import numpy as np
 import cv2
+from player_detection_sahi import player_detection_sahi
 
 
 # constants
@@ -150,31 +150,46 @@ def draw_schematic_position(
 
 
 if __name__ == "__main__":
-    # Set-up BaselineDetection class, and calculate homography between
+    # set-up BaselineDetection class, and calculate homography between
     # first_frame and schema.
-    # TODO: modify class if I give a video instead of frame,
-    # compute the first_frame selection
     bd = BaselineDetection(
         frame_points_path="data/frame_points_fix.json",
         schema_points_path="data/points_cropped_schema.json"
     )
     h, h_inv = bd.calculate_homography()
 
-    # compute player detection, and export coords in a .csv file
-    model = YOLO(model)
 
-    # run tracking
-    print("run tracking...")
-    results = model.track(
-        source=source,
-        persist=True,
-        classes=0,  # person class
-        tracker="bytetrack.yaml",
-        save=True
+    ### OLD VERSION WITH YOLO TRACKING ###
+    # # compute player detection, and export coords in a .csv file
+    # model = YOLO(model)
+
+    # # run tracking
+    # print("run tracking...")
+    # results = model.track(
+    #     source=source,
+    #     persist=True,
+    #     classes=0,  # person class
+    #     tracker="bytetrack.yaml",
+    #     save=True
+    # )
+
+    # print("save positions...")
+    # save_positions(results=results)
+    ######################################
+
+    print("detect players...")
+    player_detection_sahi(
+        video=source,
+        model=model,
+        points=[
+            [476, 457],
+            [1442, 470],
+            [129, 670],
+            [1779, 686]
+        ],
+        video_output="output/main_extract_3.mp4",
+        results_path=player_positions_path,
     )
-
-    print("save positions...")
-    save_positions(results=results)
 
     print("convert positions to schema env...")
     convert_to_schema_env(

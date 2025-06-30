@@ -51,7 +51,6 @@ class ResultItem:
             y2: float,
             confidence: float,
             type: int,
-            # bbox: Optional[List[int]]
     ):
         self.frame = frame
         self.id = id
@@ -61,7 +60,6 @@ class ResultItem:
         self.y2 = y2
         self.confidence = confidence
         self.type = type
-        # self.bbox = bbox
 
     def to_dict(self):
         return {
@@ -72,8 +70,7 @@ class ResultItem:
             "x2": self.x2,
             "y2": self.y2,
             "confidence": self.confidence,
-            "type": self.type,
-            # "bbox": self.bbox
+            "class": self.type,
         }
 
 
@@ -108,9 +105,7 @@ def player_detection_sahi(
 
     Return
     ------
-    List[]
-        List of type {'frame': , 'id': , 'x1: , 'y1': , 'x2': , 'y2': ,
-        'confidence': , 'class': }
+        List[ResultItem]
 
     """
     results = []
@@ -163,9 +158,7 @@ def player_detection_sahi(
 
         # filter keeping boxes in court ares only
         if points:
-            # margin = ((points[12][1] - points[10][1])
-            #           + (points[4][1] - points[2][1])) / 2
-            margin = 0
+            # margin = 0
 
             # filter boxes not in the court area + margin
             filtered_pred = []
@@ -202,7 +195,6 @@ def player_detection_sahi(
                 y2=item.bbox.maxy,
                 confidence=item.score.value,
                 type=0,
-                # bbox=item.bbox
             ))
 
         # save detected boxes in 'results' variable
@@ -230,7 +222,7 @@ def player_detection_sahi(
 
     if results_path != None:
         with open(results_path, "w", newline="") as csvfile:
-            fieldnames = ["frame", "id", "x1", "y1", "x2", "y2", "confidence", "type"]
+            fieldnames = ["frame", "id", "x1", "y1", "x2", "y2", "confidence", "class"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for item in results:
