@@ -197,9 +197,6 @@ def player_detection_sahi(
                 type=0,
             ))
 
-        # save detected boxes in 'results' variable
-        results.append(result.object_prediction_list)
-
         # show frame (optional)
         if show is True:
             cv2.imshow("SAHI Player Detection", res["image"])

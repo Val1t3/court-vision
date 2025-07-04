@@ -8,6 +8,7 @@ from typing import List
 import numpy as np
 import cv2
 from player_detection_sahi import player_detection_sahi
+from ultralytics import YOLO
 
 
 # constants
@@ -15,7 +16,7 @@ model = "models/yolo11m.pt"
 source = "assets/extract-3.mp4"
 player_positions_path = "saves/player_positions.csv"
 point_positions_path = "saves/point_positions.csv"
-output_path = "output/test.mp4"
+output_path = "output/test_sahi.mp4"
 
 
 def save_positions(results: List[Results]) -> None:
@@ -105,10 +106,12 @@ def convert_to_schema_env(
 
 def draw_schematic_position(
         point_positions_path : str,
-        output_path : str
+        output_path : str,
+        video_path : str
     ) -> None:
     # Read point positions from CSV
     points_by_frame = {}
+
     with open(point_positions_path, "r", newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -129,12 +132,18 @@ def draw_schematic_position(
     # load the background image
     bg_img = cv2.imread("assets/cropped_schema.png")
     if bg_img is None:
-        raise FileNotFoundError("Background image not found at assets/cropped_schema.png")
+        raise FileNotFoundError(f"Background image not found at {output_path}")
     h, w, _ = bg_img.shape
 
     # set up video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, 20.0, (w, h))
+
+    # Get fps from input video
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    cap.release()
+
+    out = cv2.VideoWriter(output_path, fourcc, fps, (w, h))
 
     for frame_idx in range(max_frame + 1):
         frame_img = bg_img.copy()
@@ -177,6 +186,7 @@ if __name__ == "__main__":
     # save_positions(results=results)
     ######################################
 
+    ### WITHOUT TRACKING ###
     print("detect players...")
     player_detection_sahi(
         video=source,
@@ -190,6 +200,7 @@ if __name__ == "__main__":
         video_output="output/main_extract_3.mp4",
         results_path=player_positions_path,
     )
+    ########################
 
     print("convert positions to schema env...")
     convert_to_schema_env(
@@ -201,7 +212,8 @@ if __name__ == "__main__":
     print("draw positions on schema...")
     draw_schematic_position(
         point_positions_path=point_positions_path,
-        output_path=output_path
+        output_path=output_path,
+        video_path=source
     )
 
     print("exit 0")
