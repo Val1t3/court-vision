@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from filterpy.kalman import KalmanFilter
+import cv2
 
 
 class Euclidean:
@@ -101,6 +102,64 @@ class Kalman:
         return group
 
 
+class OpticalFlow:
+    def __init__(self, csv_path: str, video_path: str):
+        self.df = pd.read_csv(csv_path)
+        self.df = self.df.sort_values(by=["id", "frame"]).reset_index(drop=True)
+
+        cap = cv2.VideoCapture(video_path)
+        # Parameters for LK optical flow
+        lk_params = dict(winSize=(15, 15), maxLevel=2,
+                 criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+
+        # Convert frames to grayscale for optical flow
+        ret, old_frame = cap.read()
+        old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
+
+        # Store last known positions per player
+        player_points = {}   # id -> np.array([[x, y]])
+        player_distances = {}  # id -> float
+
+        frame_num = 0
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            # Detections at this frame
+            current_detections =self.df[self.df["frame"] == frame_num]
+
+            for _, row in current_detections.iterrows():
+                pid = int(row["id"])
+                p_current = np.array([[row["x"], row["y"]]], dtype=np.float32)
+
+                if pid in player_points:
+                    p_prev = player_points[pid]
+                    p_next, st, err = cv2.calcOpticalFlowPyrLK(old_gray, gray, p_prev, None, **lk_params)
+
+                    if st[0][0] == 1:  # Successfully tracked
+                        dist = np.linalg.norm(p_next[0] - p_prev[0])
+                        player_distances[pid] += dist
+                        player_points[pid] = p_next
+                    else:
+                        player_points[pid] = p_current  # Reset on failure
+                else:
+                    player_points[pid] = p_current
+                    player_distances[pid] = 0.0
+
+            old_gray = gray.copy()
+            frame_num += 1
+
+        # Convert to DataFrame
+        distance_df = pd.DataFrame(list(player_distances.items()), columns=["player_id", "optical_flow_distance"])
+        distance_df.to_csv("saves/optical_flow_distances.csv", index=False)
+
+
 if __name__ == "__main__":
     Euclidean(csv_path="saves/point_positions.csv")
     Kalman(csv_path="saves/point_positions.csv")
+    OpticalFlow(
+        csv_path="saves/point_positions.csv",
+        video_path="assets/extract-3.mp4"
+    )
