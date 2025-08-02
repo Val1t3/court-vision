@@ -11,13 +11,6 @@ import numpy as np
 from deep_sort_realtime.deepsort_tracker import DeepSort
 
 
-# TODO:
-# [X] Retrieve result object list
-# [X] Filter with person category only
-# [X] Draw boxes and texts on the image
-# [ ] Check if box in the area of the court
-
-
 # constants
 version = "11n"
 

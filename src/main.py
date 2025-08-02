@@ -11,9 +11,16 @@ from player_detection_sahi import player_detection_sahi
 from ultralytics import YOLO
 
 
+# TODO: fix the way to retrieve points (see l.201)
+
+
 # constants
 model = "models/yolo11m.pt"
 source = "assets/extract-3.mp4"
+
+frame_points = "data/frame_points_fix.json"
+schema_points = "data/points_cropped_schema.json"
+
 player_positions_path = "saves/player_positions.csv"
 point_positions_path = "saves/point_positions.csv"
 output_path = "output/test_sahi.mp4"
@@ -162,8 +169,8 @@ if __name__ == "__main__":
     # set-up BaselineDetection class, and calculate homography between
     # first_frame and schema.
     bd = BaselineDetection(
-        frame_points_path="data/frame_points_fix.json",
-        schema_points_path="data/points_cropped_schema.json"
+        frame_points_path=frame_points,
+        schema_points_path=schema_points
     )
     h, h_inv = bd.calculate_homography()
 
@@ -191,6 +198,7 @@ if __name__ == "__main__":
     player_detection_sahi(
         video=source,
         model=model,
+        # take 4 corner points
         points=[
             [476, 457],
             [1442, 470],

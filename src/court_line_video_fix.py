@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     # Init VideoManager
     vm = VideoManager(
-        video_path="assets/extract-2.mp4",
+        video_path="assets/easy_1.mov",
         schema_path="assets/cropped_schema.png"
     )
 
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     bd = BaselineDetection(
         schema=vm.schema,
         frame=vm.first_frame,
-        frame_points_path="data/frame_points_fix.json",
+        frame_points_path="data/eval_points.json",
         schema_points_path="data/points_cropped_schema.json"
     )
 
