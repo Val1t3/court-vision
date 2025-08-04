@@ -7,6 +7,14 @@ import cv2
 from enum import Enum
 
 
+# constants
+video_const = "assets/easy_1.mov"
+schema_const = "assets/cropped_schema.png"
+
+frame_points_const = "data/eval_points.json"
+schema_points_const = "data/points_cropped_schema.json"
+
+
 class Show(Enum):
     """
     Class used to choose what type of analysis to display.
@@ -26,16 +34,16 @@ if __name__ == "__main__":
 
     # Init VideoManager
     vm = VideoManager(
-        video_path="assets/easy_1.mov",
-        schema_path="assets/cropped_schema.png"
+        video_path=video_const,
+        schema_path=schema_const
     )
 
     # Init BaselineDetection
     bd = BaselineDetection(
         schema=vm.schema,
         frame=vm.first_frame,
-        frame_points_path="data/eval_points.json",
-        schema_points_path="data/points_cropped_schema.json"
+        frame_points_path=frame_points_const,
+        schema_points_path=schema_points_const
     )
 
     # Calculate homography between frame and schema

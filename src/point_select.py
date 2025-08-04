@@ -13,8 +13,9 @@ img: cv2.Mat | None = None
 image: cv2.Mat | None = None
 mouse_pos: list = [0, 0]
 zoom_scale: float = 1.0
+index = -1
 
-def load(img_path: str, pts_path: str):
+def load(img_path: str, pts_path: str, idx: int = -1):
     """
     Load `image` and `points` files. Update `points`, `img` and `image`
     global variables.
@@ -26,6 +27,10 @@ def load(img_path: str, pts_path: str):
     """
 
     global img
+    global index
+
+    # Load index
+    index = idx
 
     # Load image file
     img = cv2.imread(filename=img_path)
@@ -61,12 +66,16 @@ def click_event(event: int, x: int, y: int, flags: int, param: any):
     """
 
     global mouse_pos
+    global index
 
     if event == cv2.EVENT_MOUSEMOVE:
         mouse_pos = [x, y]
 
     if event == cv2.EVENT_LBUTTONDOWN:
-        points.append([x, y])
+        if index != -1:
+            points[index] = [x, y]
+        else:
+            points.append([x, y])
 
 
 def draw_mouse_position():
@@ -189,14 +198,18 @@ def help_manager():
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         help_manager()
         sys.exit(1)
     elif sys.argv[1] == "-h":
         help_manager()
         sys.exit()
 
-    load(img_path=sys.argv[1], pts_path=sys.argv[2])
+    load(
+        img_path=sys.argv[1],
+        pts_path=sys.argv[2],
+        idx=int(sys.argv[3]) if len(sys.argv) == 4 else -1
+    )
 
     image = img.copy()
     cv2.imshow(winname=win_name, mat=image)
