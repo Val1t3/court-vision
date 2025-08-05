@@ -9,21 +9,26 @@ import numpy as np
 import cv2
 from player_detection_sahi import player_detection_sahi
 from ultralytics import YOLO
+from scipy.signal import savgol_filter
+import pandas as pd
 
 
 # TODO: fix the way to retrieve points (see l.201)
 
 
 # constants
+name = "medium_1"
 model = "models/yolo11m.pt"
-source = "assets/extract-3.mp4"
+source = "assets/" + name + ".mov"
 
-frame_points = "data/frame_points_fix.json"
+frame_points = "data/eval_points.json"
 schema_points = "data/points_cropped_schema.json"
 
-player_positions_path = "saves/player_positions.csv"
-point_positions_path = "saves/point_positions.csv"
-output_path = "output/test_sahi.mp4"
+player_positions_path = "saves/player_positions_" + name + ".csv"
+smoothed_player_positions_path = "saves/smoothed_player_positions_" + name + ".csv"
+point_positions_path = "saves/point_positions_" + name +".csv"
+smoothed_path = "saves/smoothed_positions_" + name + ".csv"
+output_path = "output/output_" + name + ".mp4"
 
 
 def save_positions(results: List[Results]) -> None:
@@ -111,6 +116,89 @@ def convert_to_schema_env(
                 writer.writerow(row)
 
 
+def smooth_bounding_boxes(
+    input_csv: str,
+    output_csv: str,
+    window_size: int = 11,
+    poly_order: int = 2
+) -> None:
+    """
+    Apply Savitzky–Golay smoothing to the bounding box coordinates
+    (x1, y1, x2, y2) for each player (id) across frames.
+
+    Parameters
+    ----------
+    input_csv : str
+        Path to the input CSV with raw bounding box positions.
+    output_csv : str
+        Path to write the smoothed bounding box positions.
+    window_size : int
+        The length of the filter window (must be odd).
+    poly_order : int
+        The order of the polynomial used to fit the samples.
+    """
+    import pandas as pd
+    from scipy.signal import savgol_filter
+
+    df = pd.read_csv(input_csv)
+    smoothed_rows = []
+
+    for player_id in df['id'].unique():
+        player_data = df[df['id'] == player_id].sort_values(by='frame')
+
+        if len(player_data) >= window_size:
+            for coord in ['x1', 'y1', 'x2', 'y2']:
+                player_data[coord] = savgol_filter(player_data[coord], window_size, poly_order)
+
+        smoothed_rows.append(player_data)
+
+    # Combine and save
+    df_smooth = pd.concat(smoothed_rows)
+    df_smooth.to_csv(output_csv, index=False)
+
+
+def smooth_coordinates(
+    input_csv: str,
+    output_csv: str,
+    window_size: int = 11,
+    poly_order: int = 2
+) -> None:
+    """
+    Apply Savitzky–Golay smoothing filter to x and y coordinates
+    for each player (id) across frames.
+
+    Parameters
+    ----------
+    input_csv : str
+        Path to the input CSV with homography-applied positions.
+    output_csv : str
+        Path to write the smoothed positions.
+    window_size : int
+        The length of the filter window (must be odd).
+    poly_order : int
+        The order of the polynomial used to fit the samples.
+    """
+    df = pd.read_csv(input_csv)
+    smoothed_rows = []
+
+    for player_id in df['id'].unique():
+        player_data = df[df['id'] == player_id].sort_values(by='frame')
+
+        if len(player_data) >= window_size:
+            # Apply smoothing only if enough data
+            x_smooth = savgol_filter(player_data['x'], window_size, poly_order)
+            y_smooth = savgol_filter(player_data['y'], window_size, poly_order)
+
+            player_data['x'] = x_smooth
+            player_data['y'] = y_smooth
+
+        smoothed_rows.append(player_data)
+
+    # Concatenate all smoothed player data
+    df_smooth = pd.concat(smoothed_rows)
+    df_smooth.to_csv(output_csv, index=False)
+
+
 def draw_schematic_position(
         point_positions_path : str,
         output_path : str,
@@ -164,57 +252,65 @@ def draw_schematic_position(
 
     out.release()
 
-
+# PIPELINE
 if __name__ == "__main__":
-    # set-up BaselineDetection class, and calculate homography between
-    # first_frame and schema.
+    # init
     bd = BaselineDetection(
         frame_points_path=frame_points,
         schema_points_path=schema_points
     )
     h, h_inv = bd.calculate_homography()
 
+    model = YOLO(model)
 
-    ### OLD VERSION WITH YOLO TRACKING ###
-    # # compute player detection, and export coords in a .csv file
-    # model = YOLO(model)
+    ### WITH YOLO TRACKING ###
+    # compute player detection, and export coords in a .csv file
+    print("run tracking...")
+    results = model.track(
+        source=source,
+        persist=True,
+        classes=0,  # person class
+        tracker="bytetrack.yaml",
+        save=True
+    )
 
-    # # run tracking
-    # print("run tracking...")
-    # results = model.track(
-    #     source=source,
-    #     persist=True,
-    #     classes=0,  # person class
-    #     tracker="bytetrack.yaml",
-    #     save=True
-    # )
-
-    # print("save positions...")
-    # save_positions(results=results)
+    print("save positions...")
+    save_positions(results=results)
     ######################################
 
     ### WITHOUT TRACKING ###
-    print("detect players...")
-    player_detection_sahi(
-        video=source,
-        model=model,
-        # take 4 corner points
-        points=[
-            [476, 457],
-            [1442, 470],
-            [129, 670],
-            [1779, 686]
-        ],
-        video_output="output/main_extract_3.mp4",
-        results_path=player_positions_path,
-    )
+    # print("detect players...")
+    # player_detection_sahi(
+    #     video=source,
+    #     model=model,
+    #     points=[
+    #         [0, 450],
+    #         [3800, 450],
+    #         [0, 2150],
+    #         [3800, 2150]
+    #     ],
+    #     video_output="output/main_extract_3.mp4",
+    #     results_path=player_positions_path,
+    # )
     ########################
+
+    print("smooth bounding boxes...")
+    smooth_bounding_boxes(
+    input_csv=player_positions_path,
+    output_csv=smoothed_player_positions_path
+    )
 
     print("convert positions to schema env...")
     convert_to_schema_env(
-        coord_path=player_positions_path,
+        coord_path=smoothed_player_positions_path,
         output_path=point_positions_path,
         homography=h
+    )
+
+    print("smooth coordinates with Savitzky–Golay filter...")
+    smooth_coordinates(
+        input_csv=point_positions_path,
+        output_csv=smoothed_path
     )
 
     print("draw positions on schema...")

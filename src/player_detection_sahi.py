@@ -143,8 +143,10 @@ def player_detection_sahi(
         result = get_sliced_prediction(
             frame,
             model,
-            slice_height=800,
-            slice_width=800,
+            # slice_height=800,
+            # slice_width=800,
+            slice_height=1600,
+            slice_width=1600,
             overlap_height_ratio=0.2,
             overlap_width_ratio=0.2,
             verbose=2,
