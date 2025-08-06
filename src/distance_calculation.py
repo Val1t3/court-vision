@@ -6,7 +6,8 @@ import json
 
 
 # consts
-csv_path = "saves/smoothed_positions_easy_1.csv"
+name = "eval_11"
+csv_path = "saves/smoothed_positions_" + name + ".csv"
 schema_points_path = "data/points_cropped_schema.json"
 
 class Scale:

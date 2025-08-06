@@ -16,8 +16,8 @@ import pandas as pd
 # TODO: fix the way to retrieve points (see l.201)
 
 
-# constants
-name = "medium_1"
+# consts
+name = "eval_11"
 model = "models/yolo11m.pt"
 source = "assets/" + name + ".mov"
 
