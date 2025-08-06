@@ -6,7 +6,7 @@ import json
 
 
 # consts
-name = "eval_11"
+name = "eval_8"
 csv_path = "saves/smoothed_positions_" + name + ".csv"
 schema_points_path = "data/points_cropped_schema.json"
 
@@ -47,6 +47,7 @@ class Euclidean:
     """
     def __init__(self, csv_path: str):
         scale = Scale()
+
         self.df = pd.read_csv(csv_path)
         self.df = self.df.sort_values(by=["id", "frame"])
 
@@ -85,6 +86,7 @@ class Kalman:
     """
     def __init__(self, csv_path : str):
         scale = Scale()
+
         self.df = pd.read_csv(csv_path)
         self.df = self.df.groupby('id').apply(self.smooth_with_kalman, include_groups=False).reset_index()
 
@@ -137,22 +139,34 @@ class Kalman:
 
 
 class OpticalFlow:
+    """
+    Compute the distance traveled using Optical Flow tracking between frames.
+    Includes preprocessing of YOLO bounding boxes to extract center positions.
+    """
+
     def __init__(self, csv_path: str, video_path: str):
-        self.df = pd.read_csv(csv_path)
-        self.df = self.df.sort_values(by=["id", "frame"]).reset_index(drop=True)
+        scale = Scale()
+
+        # Preprocess YOLO CSV to extract center points
+        self.df = self.preprocess_yolo_csv(csv_path)
 
         cap = cv2.VideoCapture(video_path)
-        # Parameters for LK optical flow
-        lk_params = dict(winSize=(15, 15), maxLevel=2,
-                 criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
-        # Convert frames to grayscale for optical flow
+        # Parameters for Lucas-Kanade Optical Flow
+        lk_params = dict(winSize=(15, 15),
+                         maxLevel=2,
+                         criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+
+        # Read first frame
         ret, old_frame = cap.read()
+        if not ret:
+            raise RuntimeError("Unable to read the first frame of the video.")
+
         old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
 
-        # Store last known positions per player
-        player_points = {}   # id -> np.array([[x, y]])
-        player_distances = {}  # id -> float
+        # Store last known position per player
+        player_points = {}      # id -> np.array([[x, y]])
+        player_distances = {}   # id -> float
 
         frame_num = 0
         while True:
@@ -161,8 +175,8 @@ class OpticalFlow:
                 break
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            # Detections at this frame
-            current_detections =self.df[self.df["frame"] == frame_num]
+            # Get detections at current frame
+            current_detections = self.df[self.df["frame"] == frame_num]
 
             for _, row in current_detections.iterrows():
                 pid = int(row["id"])
@@ -173,8 +187,9 @@ class OpticalFlow:
                     p_next, st, err = cv2.calcOpticalFlowPyrLK(old_gray, gray, p_prev, None, **lk_params)
 
                     if st[0][0] == 1:  # Successfully tracked
-                        dist = np.linalg.norm(p_next[0] - p_prev[0])
-                        player_distances[pid] += dist
+                        dist_px = np.linalg.norm(p_next[0] - p_prev[0])
+                        dist_m = dist_px * scale.scale
+                        player_distances[pid] += dist_m
                         player_points[pid] = p_next
                     else:
                         player_points[pid] = p_current  # Reset on failure
@@ -186,14 +201,32 @@ class OpticalFlow:
             frame_num += 1
 
         # Convert to DataFrame
-        distance_df = pd.DataFrame(list(player_distances.items()), columns=["player_id", "optical_flow_distance"])
-        distance_df.to_csv("saves/optical_flow_distances.csv", index=False)
+        distance_df = pd.DataFrame(list(player_distances.items()), columns=["player_id", "total_distance"])
+        distance_df.to_csv("saves/optical_flow_total_distance.csv", index=False)
+
+    def preprocess_yolo_csv(self, csv_path: str) -> pd.DataFrame:
+        """
+        Extracts the center of YOLO bounding boxes for use in optical flow tracking.
+
+        Parameters
+        ----------
+        csv_path : str
+            Path to the CSV file with YOLO format: frame, id, x1, y1, x2, y2, confidence, class
+
+        Returns
+        -------
+        DataFrame with columns: frame, id, x, y, confidence, class
+        """
+        df = pd.read_csv(csv_path)
+        df["x"] = (df["x1"] + df["x2"]) / 2
+        df["y"] = (df["y1"] + df["y2"]) / 2
+        return df[["frame", "id", "x", "y", "confidence", "class"]].copy()
 
 
 if __name__ == "__main__":
     Euclidean(csv_path=csv_path)
     Kalman(csv_path=csv_path)
-    # OpticalFlow(
-    #     csv_path=csv_path,
-    #     video_path="assets/easy_1.mov"
-    # )
+    OpticalFlow(
+        csv_path="saves/player_positions_eval_8.csv",
+        video_path="assets/eval_8.mov"
+    )

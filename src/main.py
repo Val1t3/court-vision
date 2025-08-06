@@ -320,4 +320,4 @@ if __name__ == "__main__":
         video_path=source
     )
 
-    print("exit 0")
+    print("exit player detection pipeline.")
