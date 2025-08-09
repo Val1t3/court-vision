@@ -1,9 +1,9 @@
 # court-vision/src, court_line_video.py
 # Code written by Valentin Woehrel, 2025
 
-from baseline_detection import BaselineDetection
-from court_tracker import CourtTracker
-from video_manager import VideoManager
+from corpus.dataset.baseline_detection import BaselineDetection
+from corpus.dataset.court_tracker import CourtTracker
+from corpus.dataset.video_manager import VideoManager
 import cv2
 import numpy as np
 

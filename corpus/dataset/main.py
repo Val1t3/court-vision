@@ -18,17 +18,17 @@ import pandas as pd
 
 # consts
 name = "eval_11"
-model = "models/yolo11m.pt"
-source = "assets/" + name + ".mov"
+model = "../data/models/yolo11m.pt"
+source = "../data/assets/" + name + ".mov"
 
-frame_points = "data/eval_points.json"
-schema_points = "data/points_cropped_schema.json"
+frame_points = "../data/data/eval_points.json"
+schema_points = "../data/data/points_cropped_schema.json"
 
-player_positions_path = "saves/player_positions_" + name + ".csv"
-smoothed_player_positions_path = "saves/smoothed_player_positions_" + name + ".csv"
-point_positions_path = "saves/point_positions_" + name +".csv"
-smoothed_path = "saves/smoothed_positions_" + name + ".csv"
-output_path = "output/output_" + name + ".mp4"
+player_positions_path = "../data/saves/player_positions_" + name + ".csv"
+smoothed_player_positions_path = "../data/saves/smoothed_player_positions_" + name + ".csv"
+point_positions_path = "../data/saves/point_positions_" + name +".csv"
+smoothed_path = "../data/saves/smoothed_positions_" + name + ".csv"
+output_path = "../data/output/output_" + name + ".mp4"
 
 
 def save_positions(results: List[Results]) -> None:
@@ -225,7 +225,7 @@ def draw_schematic_position(
     # get total number of frames
     max_frame = max(points_by_frame.keys())
     # load the background image
-    bg_img = cv2.imread("assets/cropped_schema.png")
+    bg_img = cv2.imread("../data/assets/cropped_schema.png")
     if bg_img is None:
         raise FileNotFoundError(f"Background image not found at {output_path}")
     h, w, _ = bg_img.shape
