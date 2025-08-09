@@ -184,3 +184,5 @@ saves/
 src/assets/
 
 runs/
+
+.vscode/
