@@ -186,3 +186,5 @@ src/assets/
 runs/
 
 .vscode/
+
+courtvision-dataset/

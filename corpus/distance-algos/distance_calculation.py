@@ -5,7 +5,7 @@ import cv2
 
 
 # consts
-name = "eval_8"
+name = "eval_1"
 video_src = "../data/assets/" + name + ".mov"
 csv_path = "../data/saves/smoothed_positions_" + name + ".csv"
 schema_points_path = "../data/data/points_cropped_schema.json"

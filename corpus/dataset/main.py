@@ -1,323 +1,248 @@
-# court-vision/src, main.py
-# Code written by Valentin Woehrel, 2025
-
-from baseline_detection import BaselineDetection
-from ultralytics.engine.results import Results
 import csv
-from typing import List
-import numpy as np
-import cv2
-from player_detection_sahi import player_detection_sahi
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional, Tuple, List
+
+import cv2  # noqa: F401 (ultralytics writes videos internally; keep for env sanity)
 from ultralytics import YOLO
-from scipy.signal import savgol_filter
-import pandas as pd
 
 
-# TODO: fix the way to retrieve points (see l.201)
+@dataclass
+class TrackRecord:
+    frame_index: int
+    track_id: int
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+    confidence: float
 
 
-# consts
-name = "eval_11"
-model = "../data/models/yolo11m.pt"
-source = "../data/assets/" + name + ".mov"
-
-frame_points = "../data/data/eval_points.json"
-schema_points = "../data/data/points_cropped_schema.json"
-
-player_positions_path = "../data/saves/player_positions_" + name + ".csv"
-smoothed_player_positions_path = "../data/saves/smoothed_player_positions_" + name + ".csv"
-point_positions_path = "../data/saves/point_positions_" + name +".csv"
-smoothed_path = "../data/saves/smoothed_positions_" + name + ".csv"
-output_path = "../data/output/output_" + name + ".mp4"
-
-
-def save_positions(results: List[Results]) -> None:
+def analyze_video_with_yolo11_bytetrack(
+    video_path: str,
+    output_video_path: Optional[str] = None,
+    output_csv_path: Optional[str] = None,
+    conf_threshold: float = 0.25,
+    iou_threshold: float = 0.5,
+    device: Optional[str] = None,          # e.g., "0" for GPU, or "cpu"
+    project_dir: Optional[str] = None,     # where Ultralytics will write the annotated video
+    tracker_yaml: str = "bytetrack.yaml"   # use Ultralytics' built-in ByteTrack config
+) -> Tuple[str, str]:
     """
-    Export results in a .csv file, write position of every detected players at
-    each frame.
+    Detects and tracks persons in a video using YOLOv11m + ByteTrack.
+    Returns (annotated_video_path, csv_path).
 
     Parameters
     ----------
-    results : List[Results]
-        List of `result` (detected boxes) at each frame.
+    video_path : str
+        Path to the input video file.
+    output_video_path : Optional[str]
+        Desired path for the annotated video. If None, the Ultralytics default path is used and returned.
+    output_csv_path : Optional[str]
+        Desired path for the CSV. If None, it will be created next to the output video.
+    conf_threshold : float
+        Detection confidence threshold.
+    iou_threshold : float
+        NMS IoU threshold.
+    device : Optional[str]
+        "cpu" or CUDA device string like "0". If None, Ultralytics will auto-select.
+    project_dir : Optional[str]
+        Directory for Ultralytics run artifacts (default is `runs/track`).
+    tracker_yaml : str
+        Tracker config. Keep "bytetrack.yaml" to use ByteTrack.
     """
-    with open(player_positions_path, "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["frame", "id", "x1", "y1", "x2", "y2", "confidence", "class"])
 
-        frame_idx = 0
-        for result in results:
-            boxes = result.boxes
-            if boxes.id is None:
-                continue  # no tracking info
+    # --- Validate inputs
+    input_path = Path(video_path)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Input video not found: {input_path}")
 
-            for i in range(len(boxes)):
-                track_id = int(boxes.id[i].item())
-                cls = int(boxes.cls[i].item())
-                conf = float(boxes.conf[i].item())
-                x1, y1, x2, y2 = boxes.xyxy[i].tolist()
+    # --- Load model (auto-downloads weights if needed)
+    # Model name must match Ultralytics' YOLOv11 medium checkpoint
+    model = YOLO("yolo11m.pt")
 
-                writer.writerow([frame_idx, track_id, x1, y1, x2, y2, conf, cls])
+    # We want only person class (COCO class 0). Using classes=[0] filters detections to "person".
+    # `stream=True` yields per-frame results. `save=True` writes annotated video to disk.
+    # `persist=True` keeps the tracker across frames.
+    stream = model.track(
+        source=str(input_path),
+        tracker=tracker_yaml,
+        conf=conf_threshold,
+        iou=iou_threshold,
+        classes=[0],          # person only
+        stream=True,
+        save=True,
+        device=device,
+        project=project_dir,  # None -> default "runs/track"
+        name=None,            # Ultralytics will choose exp/expN name automatically unless provided
+        verbose=False,
+        persist=True
+    )
 
-            frame_idx += 1
+    # We will:
+    # 1) iterate the generator
+    # 2) collect track rows
+    # 3) capture the save directory from the first result
+    track_rows: List[TrackRecord] = []
+    save_dir: Optional[Path] = None
+    out_video_auto_path: Optional[Path] = None
+    frame_index = -1
+
+    for results in stream:
+        frame_index += 1
+
+        # Resolve save_dir once
+        if save_dir is None:
+            # Most Ultralytics results expose `save_dir` (Path) and `path` (input frame source)
+            try:
+                save_dir = Path(results.save_dir)
+            except Exception:
+                # Fallback: use default runs directory
+                save_dir = Path("runs") / "track"
+            # Try to infer the video file Ultralytics is writing
+            # Typically it's save_dir / input_video_name_with_ext
+            out_video_auto_path = _guess_output_video_path(save_dir, input_path.name)
+
+        # Each `results` corresponds to a frame; extract tracked boxes
+        if results.boxes is None or len(results.boxes) == 0:
+            continue
+
+        boxes = results.boxes
+        # `boxes.id` holds track IDs when using a tracker; may be None for untracked detections
+        track_ids = boxes.id
+        confidences = boxes.conf
+        xyxy = boxes.xyxy
+
+        if track_ids is None:
+            # If tracker hasn't initialized yet, skip this frame
+            continue
+
+        for i in range(len(xyxy)):
+            track_id_tensor = track_ids[i]
+            if track_id_tensor is None:
+                continue
+
+            # Tensors -> python types
+            track_id = int(track_id_tensor.item())
+            x1, y1, x2, y2 = [float(v.item()) for v in xyxy[i]]
+            conf = float(confidences[i].item()) if confidences is not None else 0.0
+
+            track_rows.append(
+                TrackRecord(
+                    frame_index=frame_index,
+                    track_id=track_id,
+                    x1=x1, y1=y1, x2=x2, y2=y2,
+                    confidence=conf
+                )
+            )
+
+    if save_dir is None:
+        # No frames processed
+        raise RuntimeError("No frames were processed; check the input video or codecs.")
+
+    # Decide final video path
+    if output_video_path:
+        final_video_path = Path(output_video_path)
+        if out_video_auto_path and out_video_auto_path.exists():
+            final_video_path.parent.mkdir(parents=True, exist_ok=True)
+            # Move/rename the file to the requested location
+            out_video_auto_path.replace(final_video_path)
+        else:
+            # If we couldn't guess or find it, try to locate any video in save_dir
+            guessed = _find_first_video_file(save_dir)
+            if guessed is None:
+                raise RuntimeError(
+                    f"Ultralytics did not produce an annotated video under {save_dir}."
+                )
+            final_video_path.parent.mkdir(parents=True, exist_ok=True)
+            Path(guessed).replace(final_video_path)
+    else:
+        # Keep the auto-saved path if available; otherwise pick the first video in save_dir
+        if out_video_auto_path and out_video_auto_path.exists():
+            final_video_path = out_video_auto_path
+        else:
+            guessed = _find_first_video_file(save_dir)
+            if guessed is None:
+                raise RuntimeError(
+                    f"Ultralytics did not produce an annotated video under {save_dir}."
+                )
+            final_video_path = Path(guessed)
+
+    # Write CSV
+    if output_csv_path:
+        csv_path = Path(output_csv_path)
+    else:
+        csv_path = final_video_path.with_suffix("").with_name(
+            final_video_path.stem + "_tracks.csv"
+        )
+
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_tracks_csv(csv_path, track_rows)
+
+    return str(final_video_path), str(csv_path)
 
 
-def convert_to_schema_env(
-        coord_path : str,
-        output_path : str,
-        homography : np.ndarray
-    ) -> None:
+def _write_tracks_csv(csv_path: Path, rows: List[TrackRecord]) -> None:
+    with csv_path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["frame", "id", "x1", "y1", "x2", "y2", "confidence"])
+        for r in rows:
+            writer.writerow([r.frame_index, r.track_id, r.x1, r.y1, r.x2, r.y2, r.confidence])
+
+
+def _guess_output_video_path(save_dir: Path, input_name: str) -> Optional[Path]:
     """
-    Convert boxes coordinates to points coordinates with an application of the
-    homography matrix. Write coordinates in a new .csv file.
-
-    Parameters
-    ----------
-    coord_path : str
-        Path to the player coordinates file.
-    output_path : str
-        Path to store the new coordinates.
-    homography : np.ndarray
-        Homography matrix to use.
+    Ultralytics typically saves the annotated video as save_dir / <input_name_with_ext>.
+    This function checks that convention first, then falls back to scanning the directory.
     """
-    # read player_positions
-    with open(coord_path, "r", newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        rows = list(reader)
-        rows_new = []
-
-        # create new adapted rows for point coordinates
-        for row in rows:
-            # calculate the bottom-center point of the bounding box
-            x = float(row['x1']) + (float(row['x2']) - float(row['x1'])) / 2
-            y = float(row['y2'])
-            point = np.array([[x, y]], dtype=np.float32)
-
-            # apply homography
-            point_hom = cv2.perspectiveTransform(point[None, :, :], homography)[0, 0]
-            x_h, y_h = point_hom[0], point_hom[1]
-
-            # add new row
-            rows_new.append({
-                'frame': row['frame'],
-                'id': row['id'],
-                'x': x_h,
-                'y': y_h,
-                'confidence': row['confidence'],
-                'class': row['class'],
-            })
-
-        # save rows in a new .csv file
-        with open(output_path, "w", newline="") as outfile:
-            fieldnames = ['frame', 'id', 'x', 'y', 'confidence', 'class']
-            writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-            writer.writeheader()
-            for row in rows_new:
-                writer.writerow(row)
+    candidate = save_dir / input_name
+    if candidate.exists() and candidate.is_file():
+        return candidate
+    # Some setups may re-encode to .avi or .mp4 regardless of source extension; try common variants
+    stem = Path(input_name).stem
+    for ext in [".mp4", ".avi", ".mov", ".mkv"]:
+        alt = save_dir / f"{stem}{ext}"
+        if alt.exists():
+            return alt
+    # Fallback: scan for the first video file
+    return _find_first_video_file(save_dir)
 
 
-def smooth_bounding_boxes(
-    input_csv: str,
-    output_csv: str,
-    window_size: int = 11,
-    poly_order: int = 2
-) -> None:
-    """
-    Apply Savitzky–Golay smoothing to the bounding box coordinates
-    (x1, y1, x2, y2) for each player (id) across frames.
-
-    Parameters
-    ----------
-    input_csv : str
-        Path to the input CSV with raw bounding box positions.
-    output_csv : str
-        Path to write the smoothed bounding box positions.
-    window_size : int
-        The length of the filter window (must be odd).
-    poly_order : int
-        The order of the polynomial used to fit the samples.
-    """
-    import pandas as pd
-    from scipy.signal import savgol_filter
-
-    df = pd.read_csv(input_csv)
-    smoothed_rows = []
-
-    for player_id in df['id'].unique():
-        player_data = df[df['id'] == player_id].sort_values(by='frame')
-
-        if len(player_data) >= window_size:
-            for coord in ['x1', 'y1', 'x2', 'y2']:
-                player_data[coord] = savgol_filter(player_data[coord], window_size, poly_order)
-
-        smoothed_rows.append(player_data)
-
-    # Combine and save
-    df_smooth = pd.concat(smoothed_rows)
-    df_smooth.to_csv(output_csv, index=False)
+def _find_first_video_file(directory: Path) -> Optional[Path]:
+    video_exts = {".mp4", ".avi", ".mov", ".mkv", ".webm", ".m4v"}
+    for path in sorted(directory.glob("*")):
+        if path.suffix.lower() in video_exts and path.is_file():
+            return path
+    # Recurse one level (Ultralytics sometimes nests exp dirs)
+    for sub in sorted(directory.glob("*")):
+        if sub.is_dir():
+            found = _find_first_video_file(sub)
+            if found:
+                return found
+    return None
 
 
-def smooth_coordinates(
-    input_csv: str,
-    output_csv: str,
-    window_size: int = 11,
-    poly_order: int = 2
-) -> None:
-    """
-    Apply Savitzky–Golay smoothing filter to x and y coordinates
-    for each player (id) across frames.
-
-    Parameters
-    ----------
-    input_csv : str
-        Path to the input CSV with homography-applied positions.
-    output_csv : str
-        Path to write the smoothed positions.
-    window_size : int
-        The length of the filter window (must be odd).
-    poly_order : int
-        The order of the polynomial used to fit the samples.
-    """
-    df = pd.read_csv(input_csv)
-    smoothed_rows = []
-
-    for player_id in df['id'].unique():
-        player_data = df[df['id'] == player_id].sort_values(by='frame')
-
-        if len(player_data) >= window_size:
-            # Apply smoothing only if enough data
-            x_smooth = savgol_filter(player_data['x'], window_size, poly_order)
-            y_smooth = savgol_filter(player_data['y'], window_size, poly_order)
-
-            player_data['x'] = x_smooth
-            player_data['y'] = y_smooth
-
-        smoothed_rows.append(player_data)
-
-    # Concatenate all smoothed player data
-    df_smooth = pd.concat(smoothed_rows)
-    df_smooth.to_csv(output_csv, index=False)
-
-
-def draw_schematic_position(
-        point_positions_path : str,
-        output_path : str,
-        video_path : str
-    ) -> None:
-    # Read point positions from CSV
-    points_by_frame = {}
-
-    with open(point_positions_path, "r", newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            frame = int(row['frame'])
-            x = float(row['x'])
-            y = float(row['y'])
-            pid = int(row['id'])
-            cls = int(row['class'])
-            conf = float(row['confidence'])
-            if frame not in points_by_frame:
-                points_by_frame[frame] = []
-            points_by_frame[frame].append({
-                'x': x, 'y': y, 'id': pid, 'class': cls, 'confidence': conf
-            })
-
-    # get total number of frames
-    max_frame = max(points_by_frame.keys())
-    # load the background image
-    bg_img = cv2.imread("../data/assets/cropped_schema.png")
-    if bg_img is None:
-        raise FileNotFoundError(f"Background image not found at {output_path}")
-    h, w, _ = bg_img.shape
-
-    # set up video writer
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-
-    # Get fps from input video
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    cap.release()
-
-    out = cv2.VideoWriter(output_path, fourcc, fps, (w, h))
-
-    for frame_idx in range(max_frame + 1):
-        frame_img = bg_img.copy()
-        points = points_by_frame.get(frame_idx, [])
-        for pt in points:
-            center = (int(pt['x']), int(pt['y']))
-            color = (0, 255, 0) if pt['class'] == 0 else (0, 0, 255)
-            cv2.circle(frame_img, center, 8, color, -1)
-            cv2.putText(frame_img, str(pt['id']), (center[0]+10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-        out.write(frame_img)
-
-    out.release()
-
-# PIPELINE
 if __name__ == "__main__":
-    # init
-    bd = BaselineDetection(
-        frame_points_path=frame_points,
-        schema_points_path=schema_points
-    )
-    h, h_inv = bd.calculate_homography()
+    if len(sys.argv) < 2:
+        print("Usage: python yolo11_bytetrack_person_tracker.py <video_path> "
+              "[out_video_path] [out_csv_path]")
+        sys.exit(1)
 
-    model = YOLO(model)
+    inp = sys.argv[1]
+    out_vid = sys.argv[2] if len(sys.argv) > 2 else None
+    out_csv = sys.argv[3] if len(sys.argv) > 3 else None
 
-    ### WITH YOLO TRACKING ###
-    # compute player detection, and export coords in a .csv file
-    print("run tracking...")
-    results = model.track(
-        source=source,
-        persist=True,
-        classes=0,  # person class
-        tracker="bytetrack.yaml",
-        save=True
-    )
-
-    print("save positions...")
-    save_positions(results=results)
-    ######################################
-
-    ### WITHOUT TRACKING ###
-    # print("detect players...")
-    # player_detection_sahi(
-    #     video=source,
-    #     model=model,
-    #     points=[
-    #         [0, 450],
-    #         [3800, 450],
-    #         [0, 2150],
-    #         [3800, 2150]
-    #     ],
-    #     video_output="output/main_extract_3.mp4",
-    #     results_path=player_positions_path,
-    # )
-    ########################
-
-    print("smooth bounding boxes...")
-    smooth_bounding_boxes(
-    input_csv=player_positions_path,
-    output_csv=smoothed_player_positions_path
+    annotated_video, csv_file = analyze_video_with_yolo11_bytetrack(
+        video_path=inp,
+        output_video_path=out_vid,
+        output_csv_path=out_csv,
+        conf_threshold=0.25,
+        iou_threshold=0.5,
+        device=None,           # change to "0" to force first CUDA GPU, or "cpu"
+        project_dir=None,      # or set a custom directory for runs
+        tracker_yaml="bytetrack.yaml"
     )
 
-    print("convert positions to schema env...")
-    convert_to_schema_env(
-        coord_path=smoothed_player_positions_path,
-        output_path=point_positions_path,
-        homography=h
-    )
-
-    print("smooth coordinates with Savitzky–Golay filter...")
-    smooth_coordinates(
-        input_csv=point_positions_path,
-        output_csv=smoothed_path
-    )
-
-    print("draw positions on schema...")
-    draw_schematic_position(
-        point_positions_path=point_positions_path,
-        output_path=output_path,
-        video_path=source
-    )
-
-    print("exit player detection pipeline.")
+    print("Annotated video:", annotated_video)
+    print("CSV:", csv_file)

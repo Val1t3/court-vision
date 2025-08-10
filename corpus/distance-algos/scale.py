@@ -19,10 +19,11 @@ class Scale:
             # define real distances in meter
             long_meters = 28.0
             short_meters = 15.0
-            # calculate scales
+            # calculate scales (meters per pixel)
             scale_top = long_meters / pixels_top
             scale_bottom = long_meters / pixels_bottom
             scale_left = short_meters / pixels_left
             scale_right = short_meters / pixels_right
-        # calculate mean scale
+        # calculate mean scale (meters per pixel)
         self.scale = (scale_top + scale_bottom + scale_left + scale_right) / 4
+
