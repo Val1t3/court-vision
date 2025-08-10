@@ -15,13 +15,13 @@ class Kalman:
         Path to the .csv files with positions of each player at each frame
 
     """
-    def __init__(self, csv_path: str, schema_points_path: str):
+    def __init__(self, csv_path: str, schema_points_path: str, fps: int):
         scale = Scale(schema_points_path)
 
         self.df = pd.read_csv(csv_path)
-        self.df = self.df.groupby('id').apply(self.smooth_with_kalman, include_groups=False).reset_index()
+        self.df = self.df.groupby('id').apply(self.smooth_with_kalman, fps, include_groups=False).reset_index()
 
-        # Then compute distance exactly like before:
+        # Then compute distance exactly like before, and convert with scale:
         self.df['x_smooth_prev'] = self.df.groupby('id')['x_smooth'].shift(1)
         self.df['y_smooth_prev'] = self.df.groupby('id')['y_smooth'].shift(1)
         self.df['distance_kalman'] = np.sqrt((self.df['x_smooth'] - self.df['x_smooth_prev'])**2 +
@@ -36,15 +36,16 @@ class Kalman:
         total_distance.to_csv("../data/saves/kalman_total_distance.csv", index=False)
 
 
-    def apply_kalman_filter(self, x, y):
+    def apply_kalman_filter(self, x: float, y: float, fps: int):
         kf = KalmanFilter(dim_x=4, dim_z=2)
 
         # State: [x, y, dx, dy]
         kf.x = np.array([x[0], y[0], 0., 0.])
-        kf.F = np.array([[1, 0, 1, 0],
-                        [0, 1, 0, 1],
-                        [0, 0, 1, 0],
-                        [0, 0, 0, 1]])  # State transition matrix
+        dt = 1.0 / fps
+        kf.F = np.array([[1,0,dt,0],
+                     [0,1,0,dt],
+                     [0,0,1, 0],
+                     [0,0,0, 1]]) # State transition matrix
         kf.H = np.array([[1, 0, 0, 0],
                         [0, 1, 0, 0]])  # Measurement matrix
         kf.P *= 1000.  # Covariance matrix
@@ -62,8 +63,8 @@ class Kalman:
         return filtered[:, 0], filtered[:, 1]
 
 
-    def smooth_with_kalman(self, group):
-        x_smooth, y_smooth = self.apply_kalman_filter(group['x'].values, group['y'].values)
+    def smooth_with_kalman(self, group, fps: int):
+        x_smooth, y_smooth = self.apply_kalman_filter(group['x'].values, group['y'].values, fps)
         group['x_smooth'] = x_smooth
         group['y_smooth'] = y_smooth
         return group

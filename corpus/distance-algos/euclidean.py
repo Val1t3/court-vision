@@ -25,7 +25,7 @@ class Euclidean:
         self.df['x_prev'] = self.df.groupby('id')['x'].shift(1)
         self.df['y_prev'] = self.df.groupby('id')['y'].shift(1)
 
-        # Euclidean distance between consecutive frames
+        # Euclidean distance between consecutive frames, and multiply by scale
         self.df['distance'] = np.sqrt((self.df['x'] - self.df['x_prev'])**2 + (self.df['y'] - self.df['y_prev'])**2) * scale.scale
 
         # Fill NaN values (first frame) with 0
@@ -36,5 +36,4 @@ class Euclidean:
         total_distance.columns = ['player_id', 'total_distance']
 
         # Save results
-        # self.df.to_csv("player_distances_per_frame.csv", index=False)
         total_distance.to_csv("../data/saves/euclidean_total_distance.csv", index=False)
