@@ -4,7 +4,6 @@ import cv2
 from scale import Scale
 
 
-
 class OpticalFlow:
     """
     Compute the distance traveled using Optical Flow tracking between frames.
@@ -20,9 +19,11 @@ class OpticalFlow:
         cap = cv2.VideoCapture(video_path)
 
         # Parameters for Lucas-Kanade Optical Flow
-        lk_params = dict(winSize=(15, 15),
-                         maxLevel=2,
-                         criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+        lk_params = dict(
+            winSize=(15, 15),
+            maxLevel=2,
+            criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03),
+        )
 
         # Read first frame
         ret, old_frame = cap.read()
@@ -32,8 +33,8 @@ class OpticalFlow:
         old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
 
         # Store last known position per player
-        player_points = {}      # id -> np.array([[x, y]])
-        player_distances = {}   # id -> float
+        player_points = {}  # id -> np.array([[x, y]])
+        player_distances = {}  # id -> float
 
         frame_num = 0
         while True:
@@ -51,7 +52,9 @@ class OpticalFlow:
 
                 if pid in player_points:
                     p_prev = player_points[pid]
-                    p_next, st, err = cv2.calcOpticalFlowPyrLK(old_gray, gray, p_prev, None, **lk_params)
+                    p_next, st, err = cv2.calcOpticalFlowPyrLK(
+                        old_gray, gray, p_prev, None, **lk_params
+                    )
 
                     if st[0][0] == 1:  # Successfully tracked
                         dist_px = np.linalg.norm(p_next[0] - p_prev[0])
@@ -68,7 +71,9 @@ class OpticalFlow:
             frame_num += 1
 
         # Convert to DataFrame
-        distance_df = pd.DataFrame(list(player_distances.items()), columns=["player_id", "total_distance"])
+        distance_df = pd.DataFrame(
+            list(player_distances.items()), columns=["player_id", "total_distance"]
+        )
         distance_df.to_csv("../data/saves/optical_flow_total_distance.csv", index=False)
 
     def preprocess_yolo_csv(self, csv_path: str) -> pd.DataFrame:

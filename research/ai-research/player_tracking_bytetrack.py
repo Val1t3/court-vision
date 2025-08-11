@@ -21,7 +21,7 @@ if __name__ == "__main__":
         persist=True,
         classes=0,  # person class
         tracker="bytetrack.yaml",
-        save=True
+        save=True,
     )
 
     # save position of person on each frame

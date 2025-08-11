@@ -21,17 +21,12 @@ def get_fps(video_path):
 
 
 if __name__ == "__main__":
-    Euclidean(
-        csv_path=csv_path,
-        schema_points_path=schema_points_path
-    )
+    Euclidean(csv_path=csv_path, schema_points_path=schema_points_path)
     Kalman(
-        csv_path=csv_path,
-        schema_points_path=schema_points_path,
-        fps=get_fps(video_src)
+        csv_path=csv_path, schema_points_path=schema_points_path, fps=get_fps(video_src)
     )
     OpticalFlow(
         csv_path="../data/saves/player_positions_eval_8.csv",
         video_path="../data/assets/eval_8.mov",
-        schema_points_path=schema_points_path
+        schema_points_path=schema_points_path,
     )

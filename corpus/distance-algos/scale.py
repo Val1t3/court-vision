@@ -13,7 +13,9 @@ class Scale:
             bottom_right = self.points[15]
             # calculate distances in pixels
             pixels_top = np.linalg.norm(np.array(top_right) - np.array(top_left))
-            pixels_bottom = np.linalg.norm(np.array(bottom_right) - np.array(bottom_left))
+            pixels_bottom = np.linalg.norm(
+                np.array(bottom_right) - np.array(bottom_left)
+            )
             pixels_left = np.linalg.norm(np.array(bottom_left) - np.array(top_left))
             pixels_right = np.linalg.norm(np.array(bottom_right) - np.array(top_right))
             # define real distances in meter
@@ -26,4 +28,3 @@ class Scale:
             scale_right = short_meters / pixels_right
         # calculate mean scale (meters per pixel)
         self.scale = (scale_top + scale_bottom + scale_left + scale_right) / 4
-

@@ -54,9 +54,15 @@ def analyze_video_with_yolov11_bytetrack(
         raise FileNotFoundError(f"Input video not found: {source_path}")
 
     annotated_video_path = (
-        Path(output_video_path) if output_video_path else source_path.with_name(f"{source_path.stem}_tracked.mp4")
+        Path(output_video_path)
+        if output_video_path
+        else source_path.with_name(f"{source_path.stem}_tracked.mp4")
     )
-    csv_path = Path(output_csv_path) if output_csv_path else source_path.with_name(f"{source_path.stem}_tracks.csv")
+    csv_path = (
+        Path(output_csv_path)
+        if output_csv_path
+        else source_path.with_name(f"{source_path.stem}_tracks.csv")
+    )
 
     annotated_video_path.parent.mkdir(parents=True, exist_ok=True)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -74,8 +80,12 @@ def analyze_video_with_yolov11_bytetrack(
     probe.release()
 
     # Video writer (MP4)
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # widely compatible; use "avc1" if you have H.264
-    video_writer = cv2.VideoWriter(str(annotated_video_path), fourcc, float(fps), (frame_width, frame_height))
+    fourcc = cv2.VideoWriter_fourcc(
+        *"mp4v"
+    )  # widely compatible; use "avc1" if you have H.264
+    video_writer = cv2.VideoWriter(
+        str(annotated_video_path), fourcc, float(fps), (frame_width, frame_height)
+    )
 
     # CSV writer
     csv_file = open(csv_path, mode="w", newline="")
@@ -120,7 +130,11 @@ def analyze_video_with_yolov11_bytetrack(
                 continue
 
             # Safely move tensors to CPU lists if necessary
-            to_list = lambda t: t.cpu().tolist() if hasattr(t, "cpu") else (t.tolist() if hasattr(t, "tolist") else t)
+            to_list = (
+                lambda t: t.cpu().tolist()
+                if hasattr(t, "cpu")
+                else (t.tolist() if hasattr(t, "tolist") else t)
+            )
 
             ids_list = to_list(track_ids)
             xyxy_list = to_list(boxes.xyxy)
@@ -153,11 +167,27 @@ if __name__ == "__main__":
         description="Detect and track persons in a video using YOLOv11m + ByteTrack, saving an annotated MP4 and a CSV of bounding boxes."
     )
     parser.add_argument("video_path", type=str, help="Path to the input video file.")
-    parser.add_argument("--out-video", type=str, default=None, help="Path to save the annotated video (MP4).")
-    parser.add_argument("--out-csv", type=str, default=None, help="Path to save the tracks CSV.")
-    parser.add_argument("--weights", type=str, default="../data/models/yolo11m.pt", help="YOLO weights to use.")
-    parser.add_argument("--conf", type=float, default=0.25, help="Confidence threshold for detection.")
-    parser.add_argument("--iou", type=float, default=0.45, help="IoU threshold for NMS.")
+    parser.add_argument(
+        "--out-video",
+        type=str,
+        default=None,
+        help="Path to save the annotated video (MP4).",
+    )
+    parser.add_argument(
+        "--out-csv", type=str, default=None, help="Path to save the tracks CSV."
+    )
+    parser.add_argument(
+        "--weights",
+        type=str,
+        default="../data/models/yolo11m.pt",
+        help="YOLO weights to use.",
+    )
+    parser.add_argument(
+        "--conf", type=float, default=0.25, help="Confidence threshold for detection."
+    )
+    parser.add_argument(
+        "--iou", type=float, default=0.45, help="IoU threshold for NMS."
+    )
 
     args = parser.parse_args()
 

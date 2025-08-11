@@ -3,9 +3,6 @@ from __future__ import annotations
 
 import os
 import cv2
-import math
-import time
-import uuid
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
@@ -20,6 +17,7 @@ from sahi.auto_model import AutoDetectionModel
 
 
 # ------------------------------- Utility types -------------------------------
+
 
 @dataclass
 class Detection:
@@ -46,6 +44,7 @@ class Track:
 
 
 # ------------------------------- Geometry helpers ----------------------------
+
 
 def compute_iou_matrix(tracks: List[Track], detections: List[Detection]) -> np.ndarray:
     if len(tracks) == 0 or len(detections) == 0:
@@ -76,6 +75,7 @@ def compute_iou_matrix(tracks: List[Track], detections: List[Detection]) -> np.n
 
 
 # ------------------------------- Simple tracker ------------------------------
+
 
 class IOUHungarianTracker:
     """
@@ -109,7 +109,9 @@ class IOUHungarianTracker:
 
         if len(detections) == 0:
             # Remove stale tracks
-            self.tracks = [t for t in self.tracks if t.time_since_update <= self.max_age]
+            self.tracks = [
+                t for t in self.tracks if t.time_since_update <= self.max_age
+            ]
             return self.tracks
 
         # Associate with Hungarian
@@ -131,8 +133,12 @@ class IOUHungarianTracker:
         matched_track_indices = set([m[0] for m in matched_indices])
         matched_det_indices = set([m[1] for m in matched_indices])
 
-        unmatched_tracks = [i for i in unmatched_tracks if i not in matched_track_indices]
-        unmatched_detections = [i for i in unmatched_detections if i not in matched_det_indices]
+        unmatched_tracks = [
+            i for i in unmatched_tracks if i not in matched_track_indices
+        ]
+        unmatched_detections = [
+            i for i in unmatched_detections if i not in matched_det_indices
+        ]
 
         # Update matched tracks
         for t_idx, d_idx in matched_indices:
@@ -167,6 +173,7 @@ class IOUHungarianTracker:
 
 
 # ------------------------------- SAHI + YOLOv11m -----------------------------
+
 
 def build_sahi_ultralytics_model(
     model_path: str = "yolo11m.pt",
@@ -224,6 +231,7 @@ def run_sahi_detection_on_frame(
 
 
 # ------------------------------- Main pipeline -------------------------------
+
 
 def analyze_video_with_yolo11m_sahi(
     video_path: str,
@@ -300,7 +308,9 @@ def analyze_video_with_yolo11m_sahi(
 
     # Video writer (MP4V widely supported)
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    out = cv2.VideoWriter(output_video_path, fourcc, fps if fps > 0 else 25.0, (width, height))
+    out = cv2.VideoWriter(
+        output_video_path, fourcc, fps if fps > 0 else 25.0, (width, height)
+    )
 
     tracker = IOUHungarianTracker(
         iou_threshold=tracker_iou_threshold,
@@ -309,7 +319,11 @@ def analyze_video_with_yolo11m_sahi(
     )
 
     csv_rows: List[Dict] = []
-    rng = tqdm(total=total_frames if total_frames > 0 else None, desc="Processing", unit="frame")
+    rng = tqdm(
+        total=total_frames if total_frames > 0 else None,
+        desc="Processing",
+        unit="frame",
+    )
 
     frame_index = 0
     try:
@@ -376,7 +390,9 @@ def analyze_video_with_yolo11m_sahi(
         out.release()
 
     # Dump CSV
-    df = pd.DataFrame(csv_rows, columns=["frame_index", "track_id", "x1", "y1", "x2", "y2", "score"])
+    df = pd.DataFrame(
+        csv_rows, columns=["frame_index", "track_id", "x1", "y1", "x2", "y2", "score"]
+    )
     df.to_csv(output_csv_path, index=False)
 
     return output_video_path, output_csv_path
@@ -387,19 +403,31 @@ def analyze_video_with_yolo11m_sahi(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Person detection+tracking with YOLOv11m + SAHI.")
+    parser = argparse.ArgumentParser(
+        description="Person detection+tracking with YOLOv11m + SAHI."
+    )
     parser.add_argument("video_path", type=str, help="Path to input video")
-    parser.add_argument("--model", type=str, default="yolo11m.pt", help="Ultralytics YOLOv11m weights")
-    parser.add_argument("--device", type=str, default=None, help="cuda:0 or cpu (auto if omitted)")
+    parser.add_argument(
+        "--model", type=str, default="yolo11m.pt", help="Ultralytics YOLOv11m weights"
+    )
+    parser.add_argument(
+        "--device", type=str, default=None, help="cuda:0 or cpu (auto if omitted)"
+    )
     parser.add_argument("--conf", type=float, default=0.25, help="Confidence threshold")
     parser.add_argument("--slice_h", type=int, default=1200, help="SAHI slice height")
     parser.add_argument("--slice_w", type=int, default=1200, help="SAHI slice width")
-    parser.add_argument("--overlap", type=float, default=0.2, help="SAHI overlap ratio (0..1)")
+    parser.add_argument(
+        "--overlap", type=float, default=0.2, help="SAHI overlap ratio (0..1)"
+    )
     parser.add_argument("--out_video", type=str, default=None, help="Output video path")
     parser.add_argument("--out_csv", type=str, default=None, help="Output CSV path")
     args = parser.parse_args()
 
-    dev = args.device if args.device is not None else ("cuda:0" if cv2.cuda.getCudaEnabledDeviceCount() > 0 else "cpu")
+    dev = (
+        args.device
+        if args.device is not None
+        else ("cuda:0" if cv2.cuda.getCudaEnabledDeviceCount() > 0 else "cpu")
+    )
     analyzed_video, csv_path = analyze_video_with_yolo11m_sahi(
         video_path=args.video_path,
         output_video_path=args.out_video,

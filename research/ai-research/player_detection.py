@@ -5,7 +5,7 @@ from ultralytics import YOLO
 import cv2
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Load yolo model
     model = YOLO("models/yolo8m.pt")
 
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture("assets/extract-3.mp4")
 
     # Video writer to save the output
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         out.write(annotated_frame)
 
         # Press 'q' to exit early
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     # Release resources

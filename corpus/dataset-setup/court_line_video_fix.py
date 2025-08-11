@@ -19,6 +19,7 @@ class Show(Enum):
     """
     Class used to choose what type of analysis to display.
     """
+
     ALL = 0  # Show all
     BLENDED = 1  # Show video with lines
     WARPED = 2  # Show warped video to schema with lines
@@ -33,17 +34,14 @@ if __name__ == "__main__":
     win_name = "Court Vision - Baseline Detection"
 
     # Init VideoManager
-    vm = VideoManager(
-        video_path=video_const,
-        schema_path=schema_const
-    )
+    vm = VideoManager(video_path=video_const, schema_path=schema_const)
 
     # Init BaselineDetection
     bd = BaselineDetection(
         schema=vm.schema,
         frame=vm.first_frame,
         frame_points_path=frame_points_const,
-        schema_points_path=schema_points_const
+        schema_points_path=schema_points_const,
     )
 
     # Calculate homography between frame and schema
@@ -69,8 +67,12 @@ if __name__ == "__main__":
         blended_frame = cv2.addWeighted(inv_lines, 0.7, bd.frame, 0.5, 0)
 
         # Resize for concat
-        warped_frame = cv2.resize(warped_frame, (blended_frame.shape[1], blended_frame.shape[0]))
-        schema_frame = cv2.resize(vm.schema, (blended_frame.shape[1], blended_frame.shape[0]))
+        warped_frame = cv2.resize(
+            warped_frame, (blended_frame.shape[1], blended_frame.shape[0])
+        )
+        schema_frame = cv2.resize(
+            vm.schema, (blended_frame.shape[1], blended_frame.shape[0])
+        )
 
         # Ensure both frames have the same type
         if blended_frame.dtype != warped_frame.dtype:
@@ -90,10 +92,10 @@ if __name__ == "__main__":
             cv2.imshow(win_name, schema_frame)
 
         # Control Manager
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
-        if cv2.waitKey(1) & 0xFF == ord('s'):
-            cv2.imwrite('output/screen.png', warped_frame)
+        if cv2.waitKey(1) & 0xFF == ord("s"):
+            cv2.imwrite("output/screen.png", warped_frame)
             print("take screenshot")
 
     vm.video.release()

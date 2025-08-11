@@ -8,9 +8,10 @@ An evaluation dataset has been developed by Valentin Woehrel to assess the accur
 
 ```
   .
-  ├── eval_1.mov            — Video of the movement
-  ├── eval_1_positions.csv  — Coordinates of each player on each frame
-  ├── eval_1_distance.csv   — Distance traveled in real life
+  ├── eval_1.mov           — Video of the movement
+  ├── eval_1_tracked.mp4   — Video of the movement after player detection/tracking
+  ├── eval_1_tracks.csv    — Coordinates of each player on each frame
+  ├── eval_1_distance.csv  — Distance traveled in real life
     ...
 ```
 

@@ -89,12 +89,13 @@ class BaselineDetection:
         Points of schema.
     """
 
-    def __init__(self,
-                 schema: np.ndarray = None,
-                 frame: np.ndarray = None,
-                 frame_points_path: str = None,
-                 schema_points_path: str = None
-        ):
+    def __init__(
+        self,
+        schema: np.ndarray = None,
+        frame: np.ndarray = None,
+        frame_points_path: str = None,
+        schema_points_path: str = None,
+    ):
         """
         Initialize the BaselineDetection class.
 
@@ -121,9 +122,9 @@ class BaselineDetection:
         #     raise ValueError("[BaselineDetection error]: couldn't generate frame")
 
         # Load points from JSON files
-        with open(frame_points_path, 'r') as f:
+        with open(frame_points_path, "r") as f:
             frame_data = json.load(f)
-        with open(schema_points_path, 'r') as f:
+        with open(schema_points_path, "r") as f:
             schema_data = json.load(f)
 
         if schema_data is None:
@@ -133,7 +134,6 @@ class BaselineDetection:
 
         self.frame_points = np.array(frame_data, dtype=np.float32)
         self.schema_points = np.array(schema_data, dtype=np.float32)
-
 
     def calculate_homography(self) -> tuple:
         """
@@ -149,7 +149,9 @@ class BaselineDetection:
 
         # Check if points are in the correct format
         if len(self.frame_points) < 4 or len(self.schema_points) < 4:
-            raise ValueError("[BaselineDetection error]: not enough points to calculate homography")
+            raise ValueError(
+                "[BaselineDetection error]: not enough points to calculate homography"
+            )
 
         # Calculate homography matrix
         h, _ = cv2.findHomography(self.frame_points, self.schema_points)
@@ -157,7 +159,9 @@ class BaselineDetection:
 
         # Check if homography matrix is valid
         if h is None or h_inv is None:
-            raise ValueError("[BaselineDetection error]: couldn't calculate homography matrix")
+            raise ValueError(
+                "[BaselineDetection error]: couldn't calculate homography matrix"
+            )
 
         return h, h_inv
 
@@ -180,35 +184,67 @@ class BaselineDetection:
         """
 
         # Sideline
-        draw_line_between_points(warped_img, self.schema_points[0], self.schema_points[1])
-        draw_line_between_points(warped_img, self.schema_points[1], self.schema_points[2])
-        draw_line_between_points(warped_img, self.schema_points[2], self.schema_points[3])
-        draw_line_between_points(warped_img, self.schema_points[3], self.schema_points[0])
+        draw_line_between_points(
+            warped_img, self.schema_points[0], self.schema_points[1]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[1], self.schema_points[2]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[2], self.schema_points[3]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[3], self.schema_points[0]
+        )
 
         # 3-pts Line
-        draw_line_between_points(warped_img, self.schema_points[4], self.schema_points[5])
-        draw_line_between_points(warped_img, self.schema_points[6], self.schema_points[7])
+        draw_line_between_points(
+            warped_img, self.schema_points[4], self.schema_points[5]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[6], self.schema_points[7]
+        )
         # Half Circle
-        center_1 = (int((self.schema_points[4][0] + self.schema_points[7][0]) / 2),
-                    int((self.schema_points[4][1] + self.schema_points[7][1]) / 2))  # Center between points 5 and 6
-        center = (int((center_1[0] + self.schema_points[1][0]) / 2),
-                  int(center_1[1]))  # Center of the basket position, between axis x of center_1 and point 2
+        center_1 = (
+            int((self.schema_points[4][0] + self.schema_points[7][0]) / 2),
+            int((self.schema_points[4][1] + self.schema_points[7][1]) / 2),
+        )  # Center between points 5 and 6
+        center = (
+            int((center_1[0] + self.schema_points[1][0]) / 2),
+            int(center_1[1]),
+        )  # Center of the basket position, between axis x of center_1 and point 2
 
-        radius = int(np.linalg.norm(np.array(self.schema_points[4]) - np.array(self.schema_points[7])) / 2)
+        radius = int(
+            np.linalg.norm(
+                np.array(self.schema_points[4]) - np.array(self.schema_points[7])
+            )
+            / 2
+        )
         radius = radius + 5  # Need explanations for the small offset incrementation
 
-        if court_side == 'left':
-            cv2.ellipse(warped_img, center, (radius, radius), -100, 20, 180, (0, 255, 0), 1)
-        elif court_side == 'right':
-            cv2.ellipse(warped_img, center, (radius, radius), 100, 0, 160, (0, 255, 0), 1)
+        if court_side == "left":
+            cv2.ellipse(
+                warped_img, center, (radius, radius), -100, 20, 180, (0, 255, 0), 1
+            )
+        elif court_side == "right":
+            cv2.ellipse(
+                warped_img, center, (radius, radius), 100, 0, 160, (0, 255, 0), 1
+            )
         else:
-            raise ValueError("[BaselineDetection error]: bad value for court_side parameter of line_identification function")
+            raise ValueError(
+                "[BaselineDetection error]: bad value for court_side parameter of line_identification function"
+            )
 
         # Lane Line
-        draw_line_between_points(warped_img, self.schema_points[8], self.schema_points[9])
-        draw_line_between_points(warped_img, self.schema_points[10], self.schema_points[11])
-        draw_line_between_points(warped_img, self.schema_points[11], self.schema_points[8])
-
+        draw_line_between_points(
+            warped_img, self.schema_points[8], self.schema_points[9]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[10], self.schema_points[11]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[11], self.schema_points[8]
+        )
 
     def line_identification_full_court(self, warped_img: np.ndarray) -> np.ndarray:
         """
@@ -226,10 +262,12 @@ class BaselineDetection:
         """
 
         # Generate missing points
-        sections = [self.schema_points[3][0] - self.schema_points[2][0],
-                    self.schema_points[5][0] - self.schema_points[4][0],
-                    self.schema_points[10][0] - self.schema_points[11][0],
-                    self.schema_points[12][0] - self.schema_points[13][0]]
+        sections = [
+            self.schema_points[3][0] - self.schema_points[2][0],
+            self.schema_points[5][0] - self.schema_points[4][0],
+            self.schema_points[10][0] - self.schema_points[11][0],
+            self.schema_points[12][0] - self.schema_points[13][0],
+        ]
 
         mean_sec = statistics.mean(sections)
         pix_distance = mean_sec / 5.6
@@ -248,58 +286,141 @@ class BaselineDetection:
         np_21 = [self.schema_points[14][0] - new_point_pix, self.schema_points[14][1]]
         self.schema_points = np.vstack([self.schema_points, np_21])
 
-        left_bask = [((self.schema_points[2][0] + self.schema_points[4][0]) / 2) + new_bask_pix, self.schema_points[2][1] + ((self.schema_points[4][1] - self.schema_points[2][1]) / 2)]
+        left_bask = [
+            ((self.schema_points[2][0] + self.schema_points[4][0]) / 2) + new_bask_pix,
+            self.schema_points[2][1]
+            + ((self.schema_points[4][1] - self.schema_points[2][1]) / 2),
+        ]
         self.schema_points = np.vstack([self.schema_points, left_bask])
 
-        right_bask = [((self.schema_points[10][0] + self.schema_points[12][0]) / 2) - new_bask_pix, self.schema_points[10][1] + ((self.schema_points[12][1] - self.schema_points[10][1]) / 2)]
+        right_bask = [
+            ((self.schema_points[10][0] + self.schema_points[12][0]) / 2)
+            - new_bask_pix,
+            self.schema_points[10][1]
+            + ((self.schema_points[12][1] - self.schema_points[10][1]) / 2),
+        ]
         self.schema_points = np.vstack([self.schema_points, right_bask])
 
         # Sidelines
         # TOP
-        draw_line_between_points(warped_img, self.schema_points[0], self.schema_points[16])
-        draw_line_between_points(warped_img, self.schema_points[16], self.schema_points[8])
+        draw_line_between_points(
+            warped_img, self.schema_points[0], self.schema_points[16]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[16], self.schema_points[8]
+        )
         # RIGHT
-        draw_line_between_points(warped_img, self.schema_points[8], self.schema_points[10])
-        draw_line_between_points(warped_img, self.schema_points[10], self.schema_points[12])
-        draw_line_between_points(warped_img, self.schema_points[12], self.schema_points[15])
+        draw_line_between_points(
+            warped_img, self.schema_points[8], self.schema_points[10]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[10], self.schema_points[12]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[12], self.schema_points[15]
+        )
         # BOTTOM
-        draw_line_between_points(warped_img, self.schema_points[15], self.schema_points[17])
-        draw_line_between_points(warped_img, self.schema_points[17], self.schema_points[7])
+        draw_line_between_points(
+            warped_img, self.schema_points[15], self.schema_points[17]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[17], self.schema_points[7]
+        )
         # LEFT
-        draw_line_between_points(warped_img, self.schema_points[7], self.schema_points[4])
-        draw_line_between_points(warped_img, self.schema_points[4], self.schema_points[2])
-        draw_line_between_points(warped_img, self.schema_points[2], self.schema_points[0])
+        draw_line_between_points(
+            warped_img, self.schema_points[7], self.schema_points[4]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[4], self.schema_points[2]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[2], self.schema_points[0]
+        )
         # MID LANE
-        draw_line_between_points(warped_img, self.schema_points[16], self.schema_points[17])
+        draw_line_between_points(
+            warped_img, self.schema_points[16], self.schema_points[17]
+        )
 
         # Lane lines
         # LEFT
-        draw_line_between_points(warped_img, self.schema_points[2], self.schema_points[3])
-        draw_line_between_points(warped_img, self.schema_points[3], self.schema_points[5])
-        draw_line_between_points(warped_img, self.schema_points[5], self.schema_points[4])
+        draw_line_between_points(
+            warped_img, self.schema_points[2], self.schema_points[3]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[3], self.schema_points[5]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[5], self.schema_points[4]
+        )
         # RIGHT
-        draw_line_between_points(warped_img, self.schema_points[10], self.schema_points[11])
-        draw_line_between_points(warped_img, self.schema_points[11], self.schema_points[13])
-        draw_line_between_points(warped_img, self.schema_points[13], self.schema_points[12])
+        draw_line_between_points(
+            warped_img, self.schema_points[10], self.schema_points[11]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[11], self.schema_points[13]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[13], self.schema_points[12]
+        )
 
         # 3-pts lines
-        draw_line_between_points(warped_img, self.schema_points[1], self.schema_points[18])
-        draw_line_between_points(warped_img, self.schema_points[6], self.schema_points[19])
-        draw_line_between_points(warped_img, self.schema_points[9], self.schema_points[20])
-        draw_line_between_points(warped_img, self.schema_points[14], self.schema_points[21])
+        draw_line_between_points(
+            warped_img, self.schema_points[1], self.schema_points[18]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[6], self.schema_points[19]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[9], self.schema_points[20]
+        )
+        draw_line_between_points(
+            warped_img, self.schema_points[14], self.schema_points[21]
+        )
 
-        radius_left = int(np.linalg.norm(np.array(self.schema_points[18]) - np.array(self.schema_points[19])) / 2)
-        radius_left = radius_left + 5  # Need explanations for the small offset incrementation
+        radius_left = int(
+            np.linalg.norm(
+                np.array(self.schema_points[18]) - np.array(self.schema_points[19])
+            )
+            / 2
+        )
+        radius_left = (
+            radius_left + 5
+        )  # Need explanations for the small offset incrementation
 
-        radius_right = int(np.linalg.norm(np.array(self.schema_points[20]) - np.array(self.schema_points[21])) / 2)
-        radius_right = radius_right + 5  # Need explanations for the small offset incrementation
+        radius_right = int(
+            np.linalg.norm(
+                np.array(self.schema_points[20]) - np.array(self.schema_points[21])
+            )
+            / 2
+        )
+        radius_right = (
+            radius_right + 5
+        )  # Need explanations for the small offset incrementation
 
         # Half Circle
         center_left = tuple(map(int, self.schema_points[22]))
-        cv2.ellipse(warped_img, center_left, (radius_left, radius_left), -100, 20, 180, (0, 255, 0), 1)
+        cv2.ellipse(
+            warped_img,
+            center_left,
+            (radius_left, radius_left),
+            -100,
+            20,
+            180,
+            (0, 255, 0),
+            1,
+        )
 
         center_right = tuple(map(int, self.schema_points[23]))
-        cv2.ellipse(warped_img, center_right, (radius_right, radius_right), 100, 0, 160, (0, 255, 0), 1)
+        cv2.ellipse(
+            warped_img,
+            center_right,
+            (radius_right, radius_right),
+            100,
+            0,
+            160,
+            (0, 255, 0),
+            1,
+        )
 
         return warped_img
 

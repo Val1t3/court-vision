@@ -3,7 +3,6 @@
 
 from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
-from sahi.utils.cv import visualize_object_predictions
 import cv2
 import argparse
 import json
@@ -15,7 +14,7 @@ from deep_sort_realtime.deepsort_tracker import DeepSort
 version = "11n"
 
 video = "assets/extract-4.mp4"
-model = "models/yolo" + version +".pt"
+model = "models/yolo" + version + ".pt"
 output = "output/player-tracking-" + version + ".mp4"
 show = True
 
@@ -29,15 +28,16 @@ points = []
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description="Process input file")
-    parser.add_argument('--points', type=str, required=False, help="Coordinates" \
-    "of court points")
+    parser.add_argument(
+        "--points", type=str, required=False, help="Coordinatesof court points"
+    )
 
     args = parser.parse_args()
 
     # if points file given, open it and store coord in `points` variable
     if args.points:
         try:
-            with open(args.points, 'r') as f:
+            with open(args.points, "r") as f:
                 points = np.array(json.load(f), dtype=np.float64).tolist()
         except:
             print("error: Impossible to open points file.")
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     cap = cv2.VideoCapture(video)
 
     # Video writer to save the output
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -83,7 +83,8 @@ if __name__ == "__main__":
 
         # filter predictions to keep only "person" category
         result.object_prediction_list = [
-            item for item in result.object_prediction_list
+            item
+            for item in result.object_prediction_list
             if item.category.name == "person"
         ]
 
@@ -102,13 +103,21 @@ if __name__ == "__main__":
                 bbox = i.bbox
                 minx, miny, maxx, maxy = bbox.minx, bbox.miny, bbox.maxx, bbox.maxy
 
-                if (miny < max(points[7][1], points[15][1])
+                if (
+                    miny < max(points[7][1], points[15][1])
                     and maxy > min(points[0][1], points[8][0])
                     and minx < max(points[8][0], points[15][0])
-                    and maxx > min(points[0][0], points[7][0])):
+                    and maxx > min(points[0][0], points[7][0])
+                ):
                     filtered_pred.append(i)
                     # add item for the tracker
-                    detections.append(([minx, miny, maxx - minx, maxy - miny], i.score.value, 'person'))
+                    detections.append(
+                        (
+                            [minx, miny, maxx - minx, maxy - miny],
+                            i.score.value,
+                            "person",
+                        )
+                    )
 
             result.object_prediction_list = filtered_pred
 
@@ -117,7 +126,9 @@ if __name__ == "__main__":
                 # convert bbox into 4 points
                 bbox = i.bbox
                 minx, miny, maxx, maxy = bbox.minx, bbox.miny, bbox.maxx, bbox.maxy
-                detections.append(([minx, miny, maxx - minx, maxy - miny], i.score.value, 'person'))
+                detections.append(
+                    ([minx, miny, maxx - minx, maxy - miny], i.score.value, "person")
+                )
 
         tracks = tracker.update_tracks(raw_detections=detections, frame=frame)
 
@@ -138,8 +149,15 @@ if __name__ == "__main__":
             x1, y1, x2, y2 = map(int, ltrb)
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, f"ID {track_id}", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            cv2.putText(
+                frame,
+                f"ID {track_id}",
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2,
+            )
 
         # show frame (optional)
         if show is True:
@@ -150,7 +168,7 @@ if __name__ == "__main__":
         out.write(frame)
 
         # press 'q' to exit early
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     # release resources

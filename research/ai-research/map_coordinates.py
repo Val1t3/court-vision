@@ -18,7 +18,15 @@ def click_event(event, x, y, flags, param):
 
         # Draw a circle on the point
         cv2.circle(image_copy, (x, y), 5, (0, 0, 255), -1)
-        cv2.putText(image_copy, f"{len(points) - 1}", (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+        cv2.putText(
+            image_copy,
+            f"{len(points) - 1}",
+            (x + 5, y - 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 0, 0),
+            1,
+        )
         cv2.imshow(window_name, image_copy)
 
 
@@ -71,10 +79,10 @@ def run_point_mapping_tool(image_path, output_file="points.json"):
         cv2.imshow(window_name, image_copy)
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord('s'):  # Save points
+        if key == ord("s"):  # Save points
             save_points(points, output_file)
             break
-        elif key == ord('q'):  # Quit without saving
+        elif key == ord("q"):  # Quit without saving
             break
 
     cv2.destroyAllWindows()

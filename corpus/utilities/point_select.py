@@ -15,6 +15,7 @@ mouse_pos: list = [0, 0]
 zoom_scale: float = 1.0
 index = -1
 
+
 def load(img_path: str, pts_path: str, idx: int = -1):
     """
     Load `image` and `points` files. Update `points`, `img` and `image`
@@ -95,7 +96,7 @@ def draw_mouse_position():
         fontScale=1,
         color=(0, 255, 0),  # BGR
         thickness=2,
-        lineType=cv2.LINE_AA
+        lineType=cv2.LINE_AA,
     )
 
 
@@ -111,7 +112,7 @@ def draw_points():
             center=(pt[0], pt[1]),
             radius=5,
             color=(0, 0, 255),  # BGR
-            thickness=-1
+            thickness=-1,
         )
 
         # Draw index
@@ -123,7 +124,7 @@ def draw_points():
             fontScale=1,
             color=(0, 0, 255),  # BGR
             thickness=2,
-            lineType=cv2.LINE_AA
+            lineType=cv2.LINE_AA,
         )
 
 
@@ -154,27 +155,27 @@ def control_manager(pts_path: str) -> int:
     key = cv2.waitKey(1) & 0xFF
 
     # Remove last point
-    if key == ord('z') and len(points) > 0:
+    if key == ord("z") and len(points) > 0:
         points.pop()
         return 0
     # Zoom in
-    elif key == ord('i'):
+    elif key == ord("i"):
         zoom_scale = min(float(zoom_scale + 0.1), 5.0)
         print("zoom in", zoom_scale)
         return 0
     # Zoom out
-    elif key == ord('o'):
+    elif key == ord("o"):
         zoom_scale = max(float(zoom_scale - 0.1), 1.0)
         print("zoom out", zoom_scale)
         return 0
     # Save
-    elif key == ord('s'):
+    elif key == ord("s"):
         with open(file=pts_path, mode="w") as f:
             json.dump(obj=points, fp=f, indent=4)
         print(f"Points saved to {pts_path}.")
         return 0
     # Quit program
-    elif key == ord('q'):
+    elif key == ord("q"):
         return 1
     # Default
     return 0
@@ -197,7 +198,7 @@ def help_manager():
     print("\ts: save and quit")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 3:
         help_manager()
         sys.exit(1)
@@ -208,7 +209,7 @@ if __name__ == '__main__':
     load(
         img_path=sys.argv[1],
         pts_path=sys.argv[2],
-        idx=int(sys.argv[3]) if len(sys.argv) == 4 else -1
+        idx=int(sys.argv[3]) if len(sys.argv) == 4 else -1,
     )
 
     image = img.copy()

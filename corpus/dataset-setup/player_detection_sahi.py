@@ -12,28 +12,11 @@ import csv
 version = "11n"
 
 const_video = "assets/extract-3.mp4"
-const_model = "models/yolo" + version +".pt"
+const_model = "models/yolo" + version + ".pt"
 const_video_output = "output/player-detection-" + version + ".mp4"
 const_results_path = "saves/player_detection_results.csv"
 const_show = None
-const_points = [
-    [
-        476,
-        457
-    ],
-    [
-        1442,
-        470
-    ],
-    [
-        129,
-        670
-    ],
-    [
-        1779,
-        686
-    ]
-]
+const_points = [[476, 457], [1442, 470], [129, 670], [1779, 686]]
 
 
 class ResultItem:
@@ -42,15 +25,15 @@ class ResultItem:
     """
 
     def __init__(
-            self,
-            frame: int,
-            id: int,
-            x1: float,
-            y1: float,
-            x2: float,
-            y2: float,
-            confidence: float,
-            type: int,
+        self,
+        frame: int,
+        id: int,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        confidence: float,
+        type: int,
     ):
         self.frame = frame
         self.id = id
@@ -75,13 +58,13 @@ class ResultItem:
 
 
 def player_detection_sahi(
-        video: str,
-        model: str,
-        points: List[List[float]],
-        video_output: str = None,
-        show: bool = None,
-        results_path: str = None,
-    ) -> List[ResultItem]:
+    video: str,
+    model: str,
+    points: List[List[float]],
+    video_output: str = None,
+    show: bool = None,
+    results_path: str = None,
+) -> List[ResultItem]:
     """
     Function used to apply player detection using sliced detection and YOLO model.
     Returns a list of boxes coordinates on each frame.
@@ -123,7 +106,7 @@ def player_detection_sahi(
 
     # video writer to save the output (optional)
     if video_output != None:
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         fps = cap.get(cv2.CAP_PROP_FPS)
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -154,7 +137,8 @@ def player_detection_sahi(
 
         # filter predictions to keep only "person" category
         result.object_prediction_list = [
-            item for item in result.object_prediction_list
+            item
+            for item in result.object_prediction_list
             if item.category.name == "person"
         ]
 
@@ -169,10 +153,12 @@ def player_detection_sahi(
                 bbox = i.bbox
                 minx, miny, maxx, maxy = bbox.minx, bbox.miny, bbox.maxx, bbox.maxy
 
-                if (miny < max(points[2][1], points[3][1])
+                if (
+                    miny < max(points[2][1], points[3][1])
                     and maxy > min(points[0][1], points[2][0])
                     and minx < max(points[1][0], points[3][0])
-                    and maxx > min(points[0][0], points[2][0])):
+                    and maxx > min(points[0][0], points[2][0])
+                ):
                     filtered_pred.append(i)
 
             result.object_prediction_list = filtered_pred
@@ -184,20 +170,22 @@ def player_detection_sahi(
                 object_prediction_list=result.object_prediction_list,
                 rect_th=2,
                 text_size=1,
-                text_th=1
+                text_th=1,
             )
 
         for item in result.object_prediction_list:
-            results.append(ResultItem(
-                frame=frame_index,
-                id=1,
-                x1=item.bbox.minx,
-                y1=item.bbox.miny,
-                x2=item.bbox.maxx,
-                y2=item.bbox.maxy,
-                confidence=item.score.value,
-                type=0,
-            ))
+            results.append(
+                ResultItem(
+                    frame=frame_index,
+                    id=1,
+                    x1=item.bbox.minx,
+                    y1=item.bbox.miny,
+                    x2=item.bbox.maxx,
+                    y2=item.bbox.maxy,
+                    confidence=item.score.value,
+                    type=0,
+                )
+            )
 
         # show frame (optional)
         if show is True:
@@ -208,7 +196,7 @@ def player_detection_sahi(
             out.write(res["image"])
 
         # press 'q' to exit early
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
         # increment frame index
@@ -239,5 +227,5 @@ if __name__ == "__main__":
         video_output=const_video_output,
         results_path=const_results_path,
         show=const_show,
-        points=const_points
+        points=const_points,
     )

@@ -25,9 +25,11 @@ def analyze_video_with_yolo11_bytetrack(
     output_csv_path: Optional[str] = None,
     conf_threshold: float = 0.25,
     iou_threshold: float = 0.5,
-    device: Optional[str] = None,          # e.g., "0" for GPU, or "cpu"
-    project_dir: Optional[str] = None,     # where Ultralytics will write the annotated video
-    tracker_yaml: str = "bytetrack.yaml"   # use Ultralytics' built-in ByteTrack config
+    device: Optional[str] = None,  # e.g., "0" for GPU, or "cpu"
+    project_dir: Optional[
+        str
+    ] = None,  # where Ultralytics will write the annotated video
+    tracker_yaml: str = "bytetrack.yaml",  # use Ultralytics' built-in ByteTrack config
 ) -> Tuple[str, str]:
     """
     Detects and tracks persons in a video using YOLOv11m + ByteTrack.
@@ -70,14 +72,14 @@ def analyze_video_with_yolo11_bytetrack(
         tracker=tracker_yaml,
         conf=conf_threshold,
         iou=iou_threshold,
-        classes=[0],          # person only
+        classes=[0],  # person only
         stream=True,
         save=True,
         device=device,
         project=project_dir,  # None -> default "runs/track"
-        name=None,            # Ultralytics will choose exp/expN name automatically unless provided
+        name=None,  # Ultralytics will choose exp/expN name automatically unless provided
         verbose=False,
-        persist=True
+        persist=True,
     )
 
     # We will:
@@ -132,8 +134,11 @@ def analyze_video_with_yolo11_bytetrack(
                 TrackRecord(
                     frame_index=frame_index,
                     track_id=track_id,
-                    x1=x1, y1=y1, x2=x2, y2=y2,
-                    confidence=conf
+                    x1=x1,
+                    y1=y1,
+                    x2=x2,
+                    y2=y2,
+                    confidence=conf,
                 )
             )
 
@@ -188,7 +193,9 @@ def _write_tracks_csv(csv_path: Path, rows: List[TrackRecord]) -> None:
         writer = csv.writer(f)
         writer.writerow(["frame", "id", "x1", "y1", "x2", "y2", "confidence"])
         for r in rows:
-            writer.writerow([r.frame_index, r.track_id, r.x1, r.y1, r.x2, r.y2, r.confidence])
+            writer.writerow(
+                [r.frame_index, r.track_id, r.x1, r.y1, r.x2, r.y2, r.confidence]
+            )
 
 
 def _guess_output_video_path(save_dir: Path, input_name: str) -> Optional[Path]:
@@ -225,8 +232,10 @@ def _find_first_video_file(directory: Path) -> Optional[Path]:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python yolo11_bytetrack_person_tracker.py <video_path> "
-              "[out_video_path] [out_csv_path]")
+        print(
+            "Usage: python yolo11_bytetrack_person_tracker.py <video_path> "
+            "[out_video_path] [out_csv_path]"
+        )
         sys.exit(1)
 
     inp = sys.argv[1]
@@ -239,9 +248,9 @@ if __name__ == "__main__":
         output_csv_path=out_csv,
         conf_threshold=0.25,
         iou_threshold=0.5,
-        device=None,           # change to "0" to force first CUDA GPU, or "cpu"
-        project_dir=None,      # or set a custom directory for runs
-        tracker_yaml="bytetrack.yaml"
+        device=None,  # change to "0" to force first CUDA GPU, or "cpu"
+        project_dir=None,  # or set a custom directory for runs
+        tracker_yaml="bytetrack.yaml",
     )
 
     print("Annotated video:", annotated_video)
