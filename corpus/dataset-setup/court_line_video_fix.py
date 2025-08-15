@@ -8,11 +8,11 @@ from enum import Enum
 
 
 # constants
-video_const = "assets/easy_1.mov"
-schema_const = "assets/cropped_schema.png"
+video_const = "../data/assets/test_video.mp4"
+schema_const = "../data/assets/cropped_schema.png"
 
-frame_points_const = "data/eval_points.json"
-schema_points_const = "data/points_cropped_schema.json"
+frame_points_const = "../data/data/test_points.json"
+schema_points_const = "../data/data/points_cropped_schema.json"
 
 
 class Show(Enum):
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     print("START FIX VIDEO")
 
     # Constant
-    show = Show.ALL
+    show = Show.WARPED
     win_name = "Court Vision - Baseline Detection"
 
     # Init VideoManager
@@ -92,9 +92,10 @@ if __name__ == "__main__":
             cv2.imshow(win_name, schema_frame)
 
         # Control Manager
-        if cv2.waitKey(1) & 0xFF == ord("q"):
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("q"):
             break
-        if cv2.waitKey(1) & 0xFF == ord("s"):
+        if key == ord("s"):
             cv2.imwrite("output/screen.png", warped_frame)
             print("take screenshot")
 
