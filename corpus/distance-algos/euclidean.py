@@ -17,30 +17,22 @@ class Euclidean:
         scale = Scale(schema_points_path)
 
         self.df = pd.read_csv(csv_path)
-        self.df = self.df.sort_values(by=["id", "frame"])
 
-        # Sort by player ID and frame
-        self.df = self.df.sort_values(by=["id", "frame"])
+        self.df = self.df.sort_values(by=["frame"])
 
-        # Compute previous x and y for each player
-        self.df["x_prev"] = self.df.groupby("id")["x"].shift(1)
-        self.df["y_prev"] = self.df.groupby("id")["y"].shift(1)
+        self.df1 = self.df[self.df['id'] == 1]
+        self.df2 = self.df[self.df['id'] == 2]
 
-        # Euclidean distance between consecutive frames, and multiply by scale
-        self.df["distance"] = (
-            np.sqrt(
-                (self.df["x"] - self.df["x_prev"]) ** 2
-                + (self.df["y"] - self.df["y_prev"]) ** 2
-            )
-            * scale.scale
-        )
+        # print(self.df1)
 
-        # Fill NaN values (first frame) with 0
-        self.df["distance"] = self.df["distance"].fillna(0)
-
-        # Total distance per player
-        total_distance = self.df.groupby("id")["distance"].sum().reset_index()
-        total_distance.columns = ["player_id", "total_distance"]
-
-        # Save results
-        total_distance.to_csv("../data/saves/euclidean_total_distance.csv", index=False)
+        total_distance = 0.0
+        for index, row in self.df1.iterrows():
+            print(row['x1'], row['y1'], row['x2'], row['y2'])
+            x1_center = (row['x1'] + row['x2']) / 2
+            y1_center = (row['y1'] + row['y2']) / 2
+            if index > 0:
+                dist = np.sqrt((x1_center - prev_x1_center) ** 2 + (y1_center - prev_y1_center) ** 2)
+                total_distance += dist * scale.scale
+            prev_x1_center = x1_center
+            prev_y1_center = y1_center
+        print(total_distance)
