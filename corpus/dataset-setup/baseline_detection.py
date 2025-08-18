@@ -135,6 +135,7 @@ class BaselineDetection:
         self.frame_points = np.array(frame_data, dtype=np.float32)
         self.schema_points = np.array(schema_data, dtype=np.float32)
 
+
     def calculate_homography(self) -> tuple:
         """
         Calculate the homography matrix from the frame points to the schema points.
@@ -154,8 +155,16 @@ class BaselineDetection:
             )
 
         # Calculate homography matrix
-        h, _ = cv2.findHomography(self.frame_points, self.schema_points)
-        h_inv, _ = cv2.findHomography(self.schema_points, self.frame_points)
+        h, _ = cv2.findHomography(
+            self.frame_points,
+            self.schema_points,
+            cv2.RANSAC,
+            )
+        h_inv, _ = cv2.findHomography(
+            self.schema_points,
+            self.frame_points,
+            cv2.RANSAC,
+            )
 
         # Check if homography matrix is valid
         if h is None or h_inv is None:

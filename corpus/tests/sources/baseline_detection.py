@@ -154,8 +154,16 @@ class BaselineDetection:
             )
 
         # Calculate homography matrix
-        h, _ = cv2.findHomography(self.frame_points, self.schema_points)
-        h_inv, _ = cv2.findHomography(self.schema_points, self.frame_points)
+        h, _ = cv2.findHomography(
+            self.frame_points,
+            self.schema_points,
+            cv2.RANSAC,
+            )
+        h_inv, _ = cv2.findHomography(
+            self.schema_points,
+            self.frame_points,
+            cv2.RANSAC,
+            )
 
         # Check if homography matrix is valid
         if h is None or h_inv is None:
@@ -164,6 +172,30 @@ class BaselineDetection:
             )
 
         return h, h_inv
+
+    def apply_homography(self, pt, h_matrix):
+        """Helper method for homography application"""
+        point = np.array([pt[0], pt[1], 1.0])
+        transformed = h_matrix @ point
+        return transformed[:2] / transformed[2]
+
+    def assess_homography_quality(self, h):
+        """
+        Assess the quality of the homography transformation.
+        """
+        total_error = 0
+        for i, (fp, sp) in enumerate(zip(self.frame_points, self.schema_points)):
+            # Transform frame point to schema space
+            transformed = self.apply_homography(fp, h)
+
+            # Calculate error
+            error = np.linalg.norm(transformed - sp)
+            print(f"Point {i}: Error = {error:.2f}")
+            total_error += error
+
+        avg_error = total_error / len(self.frame_points)
+        print(f"Average reprojection error: {avg_error:.2f}")
+        return avg_error
 
     def line_identification(self, warped_img: np.ndarray, court_side: str):
         """
