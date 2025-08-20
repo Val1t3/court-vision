@@ -2,12 +2,15 @@ from euclidean import Euclidean
 from kalman import Kalman
 from optical_flow import OpticalFlow
 import cv2
+import numpy as np
+from baseline_detection import BaselineDetection
 
 
 # consts
-name = "eval_3"
+name = "eval_2"
 video_src = "../data/assets/" + name + ".mov"
 csv_path = "../data/courtvision-dataset/" + name + "_tracks.csv"
+frame_points_path = "../data/data/eval_points.json"
 schema_points_path = "../data/data/points_cropped_schema.json"
 
 
@@ -21,7 +24,19 @@ def get_fps(video_path):
 
 
 if __name__ == "__main__":
-    Euclidean(csv_path=csv_path, schema_points_path=schema_points_path)
+    bd = BaselineDetection(
+        frame_points_path=frame_points_path,
+        schema_points_path=schema_points_path,
+    )
+
+    h, h_inv = bd.calculate_homography()
+
+    Euclidean(
+        csv_path=csv_path,
+        schema_points_path=schema_points_path,
+        h=h,
+    )
+
     # Kalman(
     #     csv_path=csv_path, schema_points_path=schema_points_path, fps=get_fps(video_src)
     # )
