@@ -1,78 +1,182 @@
 import numpy as np
 import pandas as pd
-from filterpy.kalman import KalmanFilter
 from scale import Scale
+from baseline_detection import apply_homography
 
 
-class Kalman:
+class KalmanFilter:
     """
-    Compute the Kalman Filter trajectory smoothing to calculate distance
-    traveled per each player.
+    2D Kalman filter for tracking player position and velocity.
+    """
+
+    def __init__(self, dt=1.0, process_noise=1.0, measurement_noise=1.0):
+        self.dt = dt  # time step
+
+        # State vector: [x, y, vx, vy] (position and velocity)
+        self.x = np.zeros((4, 1))
+
+        # State transition matrix
+        self.F = np.array([
+            [1, 0, dt, 0],
+            [0, 1, 0, dt],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
+
+        # Measurement matrix (we only observe position)
+        self.H = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0]
+        ])
+
+        # Process noise covariance
+        self.Q = process_noise * np.array([
+            [dt**4/4, 0, dt**3/2, 0],
+            [0, dt**4/4, 0, dt**3/2],
+            [dt**3/2, 0, dt**2, 0],
+            [0, dt**3/2, 0, dt**2]
+        ])
+
+        # Measurement noise covariance
+        self.R = measurement_noise * np.eye(2)
+
+        # Error covariance matrix
+        self.P = np.eye(4) * 1000
+
+    def predict(self):
+        """Predict the next state."""
+        self.x = self.F @ self.x
+        self.P = self.F @ self.P @ self.F.T + self.Q
+
+    def update(self, measurement):
+        """Update state with new measurement."""
+        y = measurement.reshape(-1, 1) - self.H @ self.x  # residual
+        S = self.H @ self.P @ self.H.T + self.R  # residual covariance
+        K = self.P @ self.H.T @ np.linalg.inv(S)  # Kalman gain
+
+        self.x = self.x + K @ y
+        self.P = (np.eye(4) - K @ self.H) @ self.P
+
+    def get_position(self):
+        """Get current position estimate."""
+        return self.x[0, 0], self.x[1, 0]
+
+
+def calculate_kalman_distance(points: list, h: np.ndarray, scale: float,
+                            process_noise=1.0, measurement_noise=10.0):
+    """
+    Calculate distance using Kalman filter for smoother position estimates.
+
+    Parameters
+    ----------
+    points : list
+        List of (x, y) position tuples
+    h : np.ndarray
+        Homography matrix
+    scale : float
+        Scale factor for distance conversion
+    process_noise : float
+        Process noise parameter for Kalman filter
+    measurement_noise : float
+        Measurement noise parameter for Kalman filter
+    """
+    if len(points) < 2:
+        return 0.0
+
+    # Initialize Kalman filter
+    kf = KalmanFilter(
+        dt=1.0,
+        process_noise=process_noise,
+        measurement_noise=measurement_noise
+    )
+
+    # Initialize with first point (after homography)
+    first_point = apply_homography(pt=points[0], h_matrix=h)
+    kf.x[0, 0] = first_point[0]  # x position
+    kf.x[1, 0] = first_point[1]  # y position
+
+    total_distance = 0.0
+    prev_filtered_pos = first_point
+
+    for i in range(1, len(points)):
+        # Apply homography to current measurement
+        current_measurement = apply_homography(pt=points[i], h_matrix=h)
+
+        # Predict next state
+        kf.predict()
+
+        # Update with measurement
+        kf.update(np.array(current_measurement))
+
+        # Get filtered position
+        filtered_pos = kf.get_position()
+
+        # Calculate distance between filtered positions
+        distance = np.sqrt(
+            (filtered_pos[0] - prev_filtered_pos[0]) ** 2 +
+            (filtered_pos[1] - prev_filtered_pos[1]) ** 2
+        ) * scale
+
+        total_distance += distance
+        prev_filtered_pos = filtered_pos
+
+    return total_distance
+
+
+class KalmanDistance:
+    """
+    Compute the Kalman filter-based frame-by-frame distance traveled per player.
 
     Parameters
     ----------
     csv_path : str
         Path to the .csv files with positions of each player at each frame
-
+    schema_points_path : str
+        Path to schema points for scale calculation
+    h : np.ndarray
+        Homography matrix
+    process_noise : float, optional
+        Process noise parameter for Kalman filter (default: 1.0)
+    measurement_noise : float, optional
+        Measurement noise parameter for Kalman filter (default: 10.0)
     """
 
-    def __init__(self, csv_path: str, schema_points_path: str, fps: int):
+    def __init__(self, csv_path: str, schema_points_path: str, h: np.ndarray,
+                 process_noise: float = 1.0, measurement_noise: float = 10.0):
         scale = Scale(schema_points_path)
 
         self.df = pd.read_csv(csv_path)
-        self.df = (
-            self.df.groupby("id")
-            .apply(self.smooth_with_kalman, fps, include_groups=False)
-            .reset_index()
+        self.df = self.df.sort_values(by=["frame"])
+
+        self.df1 = self.df[self.df['id'] == 1]
+        self.df2 = self.df[self.df['id'] == 2]
+
+        # Process player 1
+        self.points1 = []
+        for _, row in self.df1.iterrows():
+            # convert box to x,y point
+            x = row['x1'] + (row['x2'] - row['x1']) / 2
+            y = row['y2']
+            self.points1.append((x, y))
+
+        # # Process player 2
+        # self.points2 = []
+        # for _, row in self.df2.iterrows():
+        #     # convert box to x,y point
+        #     x = row['x1'] + (row['x2'] - row['x1']) / 2
+        #     y = row['y2']
+        #     self.points2.append((x, y))
+
+        # Calculate distances using Kalman filter
+        distance1 = calculate_kalman_distance(
+            self.points1, h, scale.scale, process_noise, measurement_noise
         )
+        # distance2 = calculate_kalman_distance(
+        #     self.points2, h, scale.scale, process_noise, measurement_noise
+        # )
 
-        # Then compute distance exactly like before, and convert with scale:
-        self.df["x_smooth_prev"] = self.df.groupby("id")["x_smooth"].shift(1)
-        self.df["y_smooth_prev"] = self.df.groupby("id")["y_smooth"].shift(1)
-        self.df["distance_kalman"] = (
-            np.sqrt(
-                (self.df["x_smooth"] - self.df["x_smooth_prev"]) ** 2
-                + (self.df["y_smooth"] - self.df["y_smooth_prev"]) ** 2
-            )
-            * scale.scale
-        )
-        self.df["distance_kalman"] = self.df["distance_kalman"].fillna(0)
+        print(f"Total Kalman distance for player 1: {distance1:.2f} meters")
+        # print(f"Total Kalman distance for player 2: {distance2:.2f} meters")
 
-        # Total distance per player
-        total_distance = self.df.groupby("id")["distance_kalman"].sum().reset_index()
-        total_distance.columns = ["player_id", "total_distance"]
-
-        # Save results
-        total_distance.to_csv("../data/saves/kalman_total_distance.csv", index=False)
-
-    def apply_kalman_filter(self, x: float, y: float, fps: int):
-        kf = KalmanFilter(dim_x=4, dim_z=2)
-
-        # State: [x, y, dx, dy]
-        kf.x = np.array([x[0], y[0], 0.0, 0.0])
-        dt = 1.0 / fps
-        kf.F = np.array(
-            [[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]]
-        )  # State transition matrix
-        kf.H = np.array([[1, 0, 0, 0], [0, 1, 0, 0]])  # Measurement matrix
-        kf.P *= 1000.0  # Covariance matrix
-        kf.R = np.eye(2) * 5  # Measurement noise
-        kf.Q = np.eye(4)  # Process noise
-
-        filtered = []
-        for i in range(len(x)):
-            z = np.array([x[i], y[i]])
-            kf.predict()
-            kf.update(z)
-            filtered.append(kf.x[:2].copy())  # Only x, y
-
-        filtered = np.array(filtered)
-        return filtered[:, 0], filtered[:, 1]
-
-    def smooth_with_kalman(self, group, fps: int):
-        x_smooth, y_smooth = self.apply_kalman_filter(
-            group["x"].values, group["y"].values, fps
-        )
-        group["x_smooth"] = x_smooth
-        group["y_smooth"] = y_smooth
-        return group
+        self.distance1 = distance1
+        # self.distance2 = distance2
