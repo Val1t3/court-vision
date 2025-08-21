@@ -1,13 +1,12 @@
 from euclidean import Euclidean
 from kalman import KalmanDistance
-from optical_flow import OpticalFlow
+from optical_flow import OpticalFlowDistanceSimple, OpticalFlowDistanceAdvanced
 import cv2
-import numpy as np
 from baseline_detection import BaselineDetection
 
 
 # consts
-name = "eval_4"
+name = "eval_3"
 video_src = "../data/assets/" + name + ".mov"
 csv_path = "../data/courtvision-dataset/" + name + "_tracks.csv"
 frame_points_path = "../data/data/eval_points.json"
@@ -45,11 +44,16 @@ if __name__ == "__main__":
         measurement_noise=10.0
     )
 
-    # Kalman(
-    #     csv_path=csv_path, schema_points_path=schema_points_path, fps=get_fps(video_src)
-    # )
-    # OpticalFlow(
-    #     csv_path="../data/saves/player_positions_eval_8.csv",
-    #     video_path="../data/assets/eval_8.mov",
+    OpticalFlowDistanceSimple(
+        csv_path=csv_path,
+        video_path=video_src,
+        schema_points_path=schema_points_path,
+        h=h
+    )
+
+    # OpticalFlowDistanceAdvanced(
+    #     csv_path=csv_path,
+    #     video_path=video_src,
     #     schema_points_path=schema_points_path,
+    #     h=h
     # )
