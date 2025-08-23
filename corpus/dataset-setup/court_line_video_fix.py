@@ -3,12 +3,14 @@
 
 from baseline_detection import BaselineDetection, warp_picture
 from video_manager import VideoManager
+from schema_video import create_video
 import cv2
 from enum import Enum
 
 
 # constants
-video_const = "../data/courtvision-dataset/eval_1.mov"
+name = 'eval_2'
+video_const = "../data/courtvision-dataset/" + name + ".mov"
 schema_const = "../data/assets/cropped_schema.png"
 
 frame_points_const = "../data/data/eval_points.json"
@@ -44,16 +46,19 @@ if __name__ == "__main__":
         schema_points_path=schema_points_const,
     )
 
-    # Calculate homography between frame and schema
+    # calculate homography between frame and schema
     h, h_inv = bd.calculate_homography()
 
-
-
     # create video of schema points
+    create_video(name)
+
+    sch_video = cv2.VideoCapture('../data/output/schema_position_' + name + '.mp4')
+
 
     while vm.video.isOpened():
         ret, frame = vm.video.read()
-        if not ret:
+        sch_ret, sch_frame = sch_video.read()
+        if not ret or not sch_ret:
             print("[info]: End of video.")
             break
 
@@ -78,7 +83,7 @@ if __name__ == "__main__":
             warped_frame, (blended_frame.shape[1], blended_frame.shape[0])
         )
         schema_frame = cv2.resize(
-            vm.schema, (blended_frame.shape[1], blended_frame.shape[0])
+            sch_frame, (blended_frame.shape[1], blended_frame.shape[0])
         )
 
         # Ensure both frames have the same type
