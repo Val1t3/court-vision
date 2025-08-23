@@ -8,10 +8,10 @@ from enum import Enum
 
 
 # constants
-video_const = "../data/assets/test_video.mp4"
+video_const = "../data/courtvision-dataset/eval_1.mov"
 schema_const = "../data/assets/cropped_schema.png"
 
-frame_points_const = "../data/data/test_points.json"
+frame_points_const = "../data/data/eval_points.json"
 schema_points_const = "../data/data/points_cropped_schema.json"
 
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     print("START FIX VIDEO")
 
     # Constant
-    show = Show.WARPED
+    show = Show.ALL
     win_name = "Court Vision - Baseline Detection"
 
     # Init VideoManager
@@ -47,6 +47,10 @@ if __name__ == "__main__":
     # Calculate homography between frame and schema
     h, h_inv = bd.calculate_homography()
 
+
+
+    # create video of schema points
+
     while vm.video.isOpened():
         ret, frame = vm.video.read()
         if not ret:
@@ -57,14 +61,17 @@ if __name__ == "__main__":
         bd.frame = frame.copy()
         warped_frame = warp_picture(h=h, src=bd.frame, dest=bd.schema)
 
+        ################################## LINE IDENTIFICATION
         # Identify lines
-        lines_frame = bd.line_identification_full_court(warped_img=warped_frame)
+        # lines_frame = bd.line_identification_full_court(warped_img=warped_frame)
 
         # Rewarp frame with detected lines
-        inv_lines = warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
+        # inv_lines = warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
+        ##################################
+
 
         # Blend the lines with the original frame
-        blended_frame = cv2.addWeighted(inv_lines, 0.7, bd.frame, 0.5, 0)
+        blended_frame = cv2.addWeighted(bd.frame, 0.7, bd.frame, 0.5, 0)
 
         # Resize for concat
         warped_frame = cv2.resize(
