@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Iterable, Optional, Tuple
 
 def segment_length_error_sle(
-    csv_path: str,
+    csv_euclidean_path: str,
+    csv_kalman_path: str,
+    csv_opticalflow_path: str,
     player_id: int,
-    start_frame: int,
-    end_frame: int,
     true_length_m: float,
     methods: Optional[Iterable[str]] = None,
     plot: bool = True,
@@ -57,26 +57,39 @@ def segment_length_error_sle(
     # --- Validations
     if true_length_m <= 0:
         raise ValueError("true_length_m must be > 0.")
-    if end_frame < start_frame:
-        raise ValueError("end_frame must be >= start_frame.")
 
-    csv_path = Path(csv_path)
-    if not csv_path.exists():
-        raise FileNotFoundError(f"CSV not found: {csv_path}")
+    csv_euclidean_path = Path(csv_euclidean_path)
+    if not csv_euclidean_path.exists():
+        raise FileNotFoundError(f"CSV not found: {csv_euclidean_path}")
+
+    csv_kalman_path = Path(csv_kalman_path)
+    if not csv_kalman_path.exists():
+        raise FileNotFoundError(f"CSV not found: {csv_kalman_path}")
+
+    csv_opticalflow_path = Path(csv_opticalflow_path)
+    if not csv_opticalflow_path.exists():
+        raise FileNotFoundError(f"CSV not found: {csv_opticalflow_path}")
 
     # --- Load and basic checks
-    df = pd.read_csv(csv_path)
+    df_euclidean = pd.read_csv(csv_euclidean_path)
+    df_kalman = pd.read_csv(csv_kalman_path)
+    df_opticalflow = pd.read_csv(csv_opticalflow_path)
+
     required_cols = {"frame", "id", "step_m", "cum_m", "method"}
-    missing = required_cols - set(df.columns)
+    missing = required_cols - set(df_euclidean.columns)
     if missing:
         raise ValueError(f"CSV is missing required columns: {sorted(missing)}")
 
-    # Ensure expected dtypes
-    df["frame"] = df["frame"].astype(int)
-    df["id"] = df["id"].astype(int)
-    df["method"] = df["method"].astype(str)
-    # step_m might be tiny floats
-    df["step_m"] = pd.to_numeric(df["step_m"], errors="coerce")
+    # --- Combine all method DataFrames
+    df = pd.concat([df_euclidean, df_kalman, df_opticalflow], ignore_index=True)
+
+    # --- Define start_frame with 0 and end_frame with the largest frame value in the CSVs
+    start_frame = 0.0
+    max_frame = df["frame"].max()
+    end_frame = max_frame
+
+    if end_frame < start_frame:
+        raise ValueError("end_frame must be >= start_frame.")
 
     # --- Filter to player and frame window
     w = (df["id"] == player_id) & (df["frame"] >= start_frame) & (df["frame"] <= end_frame)
@@ -128,29 +141,32 @@ def segment_length_error_sle(
 
 
 if __name__ == "__main__":
-    import argparse
+    # import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Execute SLE test to comapre all distance calculation algorithms."
-    )
-    parser.add_argument("--name", type=str, help="Name of the eval.")
-    parser.add_argument("--player-id", type=int, help="Id of the player to do the test.")
-    parser.add_argument("--start", type=int, help="Start frame.")
-    parser.add_argument("--end", type=int, help="End frame.")
-    parser.add_argument("--length", type=float, help="True length in meters.")
+    # parser = argparse.ArgumentParser(
+    #     description="Execute SLE test to comapre all distance calculation algorithms."
+    # )
+    # parser.add_argument("--name", type=str, help="Name of the eval.")
+    # parser.add_argument("--player-id", type=int, help="Id of the player to do the test.")
+    # parser.add_argument("--start", type=int, help="Start frame.")
+    # parser.add_argument("--end", type=int, help="End frame.")
+    # parser.add_argument("--length", type=float, help="True length in meters.")
 
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
+
+    name = "eval_1"
+    true_length = 15
 
     res, fig = segment_length_error_sle(
-        csv_path=f"../data/courtvision-dataset/{args.name}_dist.csv",
+        csv_euclidean_path=f"../data/courtvision-dataset/{name}_dist_euclidean.csv",
+        csv_kalman_path=f"../data/courtvision-dataset/{name}_dist_kalman.csv",
+        csv_opticalflow_path=f"../data/courtvision-dataset/{name}_dist_optical_flow.csv",
         player_id=1,
-        start_frame=0,
-        end_frame=280,
-        true_length_m=16.4,
+        true_length_m=15,
         methods=None,
         plot=True,
-        title="Title plot"
+        title=f"SLE Comparison · Player 1 · {name} · True Length: {true_length}m"
     )
     print(res)
-    fig.savefig(f"{args.name}_sle_plot_.png")
+    fig.savefig(f"{name}_sle_plot_.png")
