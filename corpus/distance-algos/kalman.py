@@ -96,6 +96,8 @@ def calculate_kalman_distance(points: list, h: np.ndarray, scale: float,
     kf.x[1, 0] = first_point[1]  # y position
 
     total_distance = 0.0
+    step_distances = [0.0]
+    cum_distances = [0.0]
     prev_filtered_pos = first_point
 
     for i in range(1, len(points)):
@@ -118,9 +120,11 @@ def calculate_kalman_distance(points: list, h: np.ndarray, scale: float,
         ) * scale
 
         total_distance += distance
+        step_distances.append(distance)
+        cum_distances.append(total_distance)
         prev_filtered_pos = filtered_pos
 
-    return total_distance
+    return total_distance, step_distances, cum_distances
 
 
 class KalmanDistance:
@@ -142,7 +146,8 @@ class KalmanDistance:
     """
 
     def __init__(self, csv_path: str, schema_points_path: str, h: np.ndarray,
-                 process_noise: float = 1.0, measurement_noise: float = 10.0):
+                 output_csv_path: str, process_noise: float = 1.0,
+                 measurement_noise: float = 10.0):
         scale = Scale(schema_points_path)
 
         self.df = pd.read_csv(csv_path)
@@ -153,30 +158,27 @@ class KalmanDistance:
 
         # Process player 1
         self.points1 = []
+        frames = []
         for _, row in self.df1.iterrows():
             # convert box to x,y point
             x = row['x1'] + (row['x2'] - row['x1']) / 2
             y = row['y2']
             self.points1.append((x, y))
-
-        # # Process player 2
-        # self.points2 = []
-        # for _, row in self.df2.iterrows():
-        #     # convert box to x,y point
-        #     x = row['x1'] + (row['x2'] - row['x1']) / 2
-        #     y = row['y2']
-        #     self.points2.append((x, y))
+            frames.append(row["frame"])
 
         # Calculate distances using Kalman filter
-        distance1 = calculate_kalman_distance(
+        distance1, step_distances, cum_distances = calculate_kalman_distance(
             self.points1, h, scale.scale, process_noise, measurement_noise
         )
-        # distance2 = calculate_kalman_distance(
-        #     self.points2, h, scale.scale, process_noise, measurement_noise
-        # )
 
-        print(f"Total Kalman distance for player 1: {distance1:.2f} meters")
-        # print(f"Total Kalman distance for player 2: {distance2:.2f} meters")
+        results = pd.DataFrame({
+            'frame': frames,
+            'id': 1,
+            'step_m': step_distances,
+            'cum_m': cum_distances,
+            'method': 'kalman'
+        })
 
-        self.distance1 = distance1
-        # self.distance2 = distance2
+        results.to_csv(output_csv_path, index=False)
+        print(f"Results written to {output_csv_path}")
+        print(f"Kalman distance: {distance1:.2f} meters")

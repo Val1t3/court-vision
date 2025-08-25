@@ -34,6 +34,7 @@ if __name__ == "__main__":
         csv_path=csv_path,
         schema_points_path=schema_points_path,
         h=h,
+        output_csv_path=csv_path.replace("_tracks.csv", "_dist_euclidean.csv")
     )
 
     KalmanDistance(
@@ -41,14 +42,16 @@ if __name__ == "__main__":
         schema_points_path=schema_points_path,
         h=h,
         process_noise=1.0,
-        measurement_noise=10.0
+        measurement_noise=10.0,
+        output_csv_path=csv_path.replace("_tracks.csv", "_dist_kalman.csv")
     )
 
     OpticalFlowDistanceSimple(
         csv_path=csv_path,
         video_path=video_src,
         schema_points_path=schema_points_path,
-        h=h
+        h=h,
+        output_csv_path=csv_path.replace("_tracks.csv", "_dist_optical_flow.csv")
     )
 
     # OpticalFlowDistanceAdvanced(

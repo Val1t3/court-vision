@@ -4,7 +4,6 @@ import cv2
 from scale import Scale
 from baseline_detection import apply_homography
 
-
 class OpticalFlowDistanceSimple:
     """
     Simple optical flow distance calculation using dense optical flow.
@@ -13,13 +12,14 @@ class OpticalFlowDistanceSimple:
     """
 
     def __init__(self, csv_path: str, video_path: str, schema_points_path: str, 
-                 h: np.ndarray, roi_size: int = 30):
+                 h: np.ndarray, output_csv_path: str, roi_size: int = 30):
         scale = Scale(schema_points_path)
 
         self.df = pd.read_csv(csv_path)
         self.df = self.df.sort_values(by=["frame"])
         self.df1 = self.df[self.df['id'] == 1]
 
+        self.output_path = output_csv_path
         self.video_path = video_path
         self.h = h
         self.scale = scale.scale
@@ -27,9 +27,21 @@ class OpticalFlowDistanceSimple:
 
         distance1 = self._calculate_simple_optical_flow()
 
-        print(f"Total Simple Optical Flow distance for player 1: {distance1:.2f} meters")
+        print(f"Optical Flow distance: {distance1:.2f} meters")
 
-        self.distance1 = distance1
+
+    def _export_results(self, frames: list, step_distances: list, cum_distances: list,
+                    output_csv_path: str):
+        results = pd.DataFrame({
+            'frame': frames,
+            'id': 1,
+            'step_m': step_distances,
+            'cum_m': cum_distances,
+            'method': 'opical_flow'
+        })
+
+        results.to_csv(output_csv_path, index=False)
+
 
     def _calculate_simple_optical_flow(self):
         """Calculate distance using simple dense optical flow."""
@@ -39,6 +51,9 @@ class OpticalFlowDistanceSimple:
             raise ValueError(f"Cannot open video file: {self.video_path}")
 
         total_distance = 0.0
+        step_distances = [0.0]
+        cum_distances = [0.0]
+        frames = [0]
         prev_gray = None
         prev_center = None
 
@@ -84,11 +99,22 @@ class OpticalFlowDistanceSimple:
                     ) * self.scale
 
                     total_distance += distance
+                    frames.append(row['frame'])
+                    step_distances.append(distance)
+                    cum_distances.append(total_distance)
 
             prev_gray = gray.copy()
             prev_center = current_center
 
         cap.release()
+        self._export_results(
+            frames=frames,
+            step_distances=step_distances,
+            cum_distances=cum_distances,
+            output_csv_path=self.output_path
+        )
+        print(f"Results written to {self.output_path}")
+
         return total_distance
 
 
