@@ -8,6 +8,6 @@
 
 # calculate distances for all video
 for i in {4..11}; do
-    python3 distance_calculation.py --name "eval_{i}"
-    echo "# Finished processing distances eval_{i} #"
+    python3 distance_calculation.py --name "eval_${i}"
+    echo "# Finished processing distances eval_${i} #"
 done

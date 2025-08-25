@@ -6,8 +6,6 @@ from baseline_detection import BaselineDetection
 import argparse
 
 
-
-
 def get_fps(video_path):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():

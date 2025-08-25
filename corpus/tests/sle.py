@@ -2,6 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
+import argparse
+
 
 def segment_length_error_sle(
     csv_euclidean_path: str,
@@ -141,22 +143,15 @@ def segment_length_error_sle(
 
 
 if __name__ == "__main__":
-    # import argparse
+    # arg parser
+    parser = argparse.ArgumentParser(description="Distance calculation for court vision dataset")
+    parser.add_argument("--name", type=str, help="Name of the evaluation set")
+    parser.add_argument("--length", type=float, help="True length")
 
-    # parser = argparse.ArgumentParser(
-    #     description="Execute SLE test to comapre all distance calculation algorithms."
-    # )
-    # parser.add_argument("--name", type=str, help="Name of the eval.")
-    # parser.add_argument("--player-id", type=int, help="Id of the player to do the test.")
-    # parser.add_argument("--start", type=int, help="Start frame.")
-    # parser.add_argument("--end", type=int, help="End frame.")
-    # parser.add_argument("--length", type=float, help="True length in meters.")
+    args = parser.parse_args()
 
-
-    # args = parser.parse_args()
-
-    name = "eval_1"
-    true_length = 15
+    name = args.name
+    true_length = args.length
 
     res, fig = segment_length_error_sle(
         csv_euclidean_path=f"../data/courtvision-dataset/{name}_dist_euclidean.csv",
