@@ -10,11 +10,16 @@ from enum import Enum
 
 
 # constants
-name = 'eval_2'
+name = 'eval_1'
+
 video_const = "../data/courtvision-dataset/" + name + ".mov"
 schema_const = "../data/assets/cropped_schema.png"
 
 coordinates_path = "../data/courtvision-dataset/" + name + "_tracks.csv"
+
+euclidean_path = "../data/courtvision-dataset/" + name + "_dist_euclidean.csv"
+kalman_path = "../data/courtvision-dataset/" + name + "_dist_kalman.csv"
+opticalflow_path = "../data/courtvision-dataset/" + name + "_dist_optical_flow.csv"
 
 frame_points_const = "../data/data/eval_points.json"
 schema_points_const = "../data/data/points_cropped_schema.json"
@@ -52,6 +57,13 @@ if __name__ == "__main__":
     # calculate homography between frame and schema
     h, h_inv = bd.calculate_homography()
 
+    # retrieve cum distance for each algo
+    euclidean_cum_m = pd.read_csv(euclidean_path)
+    kalman_cum_m = pd.read_csv(kalman_path)
+    opticalflow_cum_m = pd.read_csv(opticalflow_path)
+
+    max_frame = euclidean_cum_m["frame"].max()
+
     # create video of schema points
     create_video(name)
 
@@ -61,7 +73,7 @@ if __name__ == "__main__":
 
     frame_num = 0
 
-    while vm.video.isOpened():
+    while vm.video.isOpened() or frame_num < max_frame:
         ret, frame = vm.video.read()
         sch_ret, sch_frame = sch_video.read()
         if not ret or not sch_ret:
@@ -72,13 +84,59 @@ if __name__ == "__main__":
         bd.frame = frame.copy()
         warped_frame = warp_picture(h=h, src=bd.frame, dest=bd.schema)
 
-        ################################## LINE IDENTIFICATION
+        ##################################
         # Identify lines
         # lines_frame = bd.line_identification_full_court(warped_img=warped_frame)
 
         # Rewarp frame with detected lines
         # inv_lines = warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
         ##################################
+
+        # distances
+        euclidean_vals = euclidean_cum_m[euclidean_cum_m['frame'] == frame_num]['cum_m'].values
+        kalman_vals = kalman_cum_m[kalman_cum_m['frame'] == frame_num]['cum_m'].values
+        opticalflow_vals = opticalflow_cum_m[opticalflow_cum_m['frame'] == frame_num]['cum_m'].values
+
+        euclidean_dist = euclidean_vals[0] if len(euclidean_vals) > 0 else euclidean_cum_m['cum_m'].values[-1]
+        kalman_dist = kalman_vals[0] if len(kalman_vals) > 0 else kalman_cum_m['cum_m'].values[-1]
+        opticalflow_dist = opticalflow_vals[0] if len(opticalflow_vals) > 0 else opticalflow_cum_m['cum_m'].values[-1]
+
+        # write cum distance for each algo
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 4
+        color = (255, 255, 255)
+        thickness = 7
+
+        cv2.putText(
+            img=bd.frame,
+            text=f"Euclidean: {euclidean_dist:.2f} m",
+            fontFace=font,
+            fontScale=font_scale,
+            color=(255, 255, 0),
+            thickness=thickness,
+            org=(10, 110)
+        )
+
+        cv2.putText(
+            img=bd.frame,
+            text=f"Kalman: {kalman_dist:.2f} m",
+            fontFace=font,
+            fontScale=font_scale,
+            color=(0, 255, 50),
+            thickness=thickness,
+            org=(10, 250)
+        )
+
+        cv2.putText(
+            img=bd.frame,
+            text=f"Optical Flow: {opticalflow_dist:.2f} m",
+            fontFace=font,
+            fontScale=font_scale,
+            color=(0, 100, 255),
+            thickness=thickness,
+            org=(10, 390)
+        )
+
 
         # Draw trajectory - draw position on each frame before frame_num
         for i in range(frame_num):
