@@ -4,6 +4,7 @@
 from baseline_detection import BaselineDetection, warp_picture
 from video_manager import VideoManager
 from schema_video import create_video
+import pandas as pd
 import cv2
 from enum import Enum
 
@@ -12,6 +13,8 @@ from enum import Enum
 name = 'eval_2'
 video_const = "../data/courtvision-dataset/" + name + ".mov"
 schema_const = "../data/assets/cropped_schema.png"
+
+coordinates_path = "../data/courtvision-dataset/" + name + "_tracks.csv"
 
 frame_points_const = "../data/data/eval_points.json"
 schema_points_const = "../data/data/points_cropped_schema.json"
@@ -54,6 +57,9 @@ if __name__ == "__main__":
 
     sch_video = cv2.VideoCapture('../data/output/schema_position_' + name + '.mp4')
 
+    coordinates_df = pd.read_csv(coordinates_path)
+
+    frame_num = 0
 
     while vm.video.isOpened():
         ret, frame = vm.video.read()
@@ -74,6 +80,11 @@ if __name__ == "__main__":
         # inv_lines = warp_picture(h=h_inv, src=lines_frame, dest=bd.frame)
         ##################################
 
+        # Draw trajectory - draw position on each frame before frame_num
+        for i in range(frame_num):
+            frame_coo = coordinates_df[(coordinates_df["frame"] == i) & (coordinates_df["id"] == 1)]
+            center = (int((frame_coo["x1"].values[0] + frame_coo["x2"].values[0]) / 2), int(frame_coo["y2"].values[0]))
+            cv2.circle(bd.frame, center, 15, (0, 0, 255), -1)
 
         # Blend the lines with the original frame
         blended_frame = cv2.addWeighted(bd.frame, 0.7, bd.frame, 0.5, 0)
@@ -110,6 +121,8 @@ if __name__ == "__main__":
         if key == ord("s"):
             cv2.imwrite("output/screen.png", warped_frame)
             print("take screenshot")
+
+        frame_num += 1
 
     vm.video.release()
     cv2.destroyAllWindows()
