@@ -158,7 +158,7 @@ if __name__ == "__main__":
         csv_kalman_path=f"../data/courtvision-dataset/{name}_dist_kalman.csv",
         csv_opticalflow_path=f"../data/courtvision-dataset/{name}_dist_optical_flow.csv",
         player_id=1,
-        true_length_m=15,
+        true_length_m=true_length,
         methods=None,
         plot=True,
         title=f"SLE Comparison · Player 1 · {name} · True Length: {true_length}m"
