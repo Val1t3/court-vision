@@ -5,6 +5,7 @@ An evaluation dataset has been developed by Valentin Woehrel to assess the accur
 - Video recordings of player movements
 - Approximate player positions for each frame
 - Ground truth distances traveled (in meters)
+- Calculated distances using 3 algorithms
 
 ```
   .
@@ -12,6 +13,9 @@ An evaluation dataset has been developed by Valentin Woehrel to assess the accur
   ├── eval_1_tracked.mp4   — Video of the movement after player detection/tracking
   ├── eval_1_tracks.csv    — Coordinates of each player on each frame
   ├── eval_1_distance.csv  — Distance traveled in real life
+  ├── eval_1_dist_euclidean.csv  — Step and cumulative distance calculated with Euclidean Algorithm
+  ├── eval_1_dist_kalman.csv  — Step and cumulative distance calculated with Kalman Algorithm
+  ├── eval_1_dist_optical_flow.csv  — Step and cumulative distance calculated with Optical Flow Algorithm
     ...
 ```
 
@@ -20,6 +24,7 @@ An evaluation dataset has been developed by Valentin Woehrel to assess the accur
 ## Runs
 
 ### ‼️ Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
