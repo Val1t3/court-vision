@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from scale import Scale
 from baseline_detection import apply_homography
+import time
 
 
 def calculate_step_distances(points: list, h: np.ndarray, scale: float):
@@ -30,6 +31,7 @@ def calculate_step_distances(points: list, h: np.ndarray, scale: float):
 
 class Euclidean:
     def __init__(self, csv_path: str, schema_points_path: str, h: np.ndarray, output_csv_path: str):
+        start_time = time.time()
         scale = Scale(schema_points_path)
         self.df = pd.read_csv(csv_path)
         self.df = self.df.sort_values(by=["frame"])
@@ -54,5 +56,8 @@ class Euclidean:
         })
 
         results.to_csv(output_csv_path, index=False)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
         print(f"Results written to {output_csv_path}")
         print(f"Euclidean distance: {total_distance} meters")
+        print(f"Computing time: {elapsed_time:.4f} seconds")

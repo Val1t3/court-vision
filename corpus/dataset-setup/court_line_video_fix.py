@@ -10,7 +10,7 @@ from enum import Enum
 
 
 # constants
-name = 'eval_1'
+name = 'eval_2'
 
 video_const = "../data/courtvision-dataset/" + name + ".mov"
 schema_const = "../data/assets/cropped_schema.png"
@@ -103,38 +103,38 @@ if __name__ == "__main__":
 
         # write cum distance for each algo
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 4
+        font_scale = 0.6
         color = (255, 255, 255)
-        thickness = 7
+        thickness = 2
 
         cv2.putText(
-            img=bd.frame,
+            img=sch_frame,
             text=f"Euclidean: {euclidean_dist:.2f} m",
             fontFace=font,
             fontScale=font_scale,
             color=(255, 255, 0),
             thickness=thickness,
-            org=(10, 110)
+            org=(0, 20)
         )
 
         cv2.putText(
-            img=bd.frame,
+            img=sch_frame,
             text=f"Kalman: {kalman_dist:.2f} m",
             fontFace=font,
             fontScale=font_scale,
-            color=(0, 255, 50),
+            color=(0, 255, 80),
             thickness=thickness,
-            org=(10, 250)
+            org=(0, 40)
         )
 
         cv2.putText(
-            img=bd.frame,
+            img=sch_frame,
             text=f"Optical Flow: {opticalflow_dist:.2f} m",
             fontFace=font,
             fontScale=font_scale,
             color=(0, 100, 255),
             thickness=thickness,
-            org=(10, 390)
+            org=(0, 60)
         )
 
 

@@ -3,6 +3,7 @@ import pandas as pd
 import cv2
 from scale import Scale
 from baseline_detection import apply_homography
+import time
 
 class OpticalFlowDistanceSimple:
     """
@@ -11,8 +12,9 @@ class OpticalFlowDistanceSimple:
     Tracks player movement using Farneback optical flow method.
     """
 
-    def __init__(self, csv_path: str, video_path: str, schema_points_path: str, 
+    def __init__(self, csv_path: str, video_path: str, schema_points_path: str,
                  h: np.ndarray, output_csv_path: str, roi_size: int = 30):
+        start_time = time.time()
         scale = Scale(schema_points_path)
 
         self.df = pd.read_csv(csv_path)
@@ -27,7 +29,10 @@ class OpticalFlowDistanceSimple:
 
         distance1 = self._calculate_simple_optical_flow()
 
+        end_time = time.time()
+        elapsed_time = end_time - start_time
         print(f"Optical Flow distance: {distance1:.2f} meters")
+        print(f"Computing time: {elapsed_time:.4f} seconds")
 
 
     def _export_results(self, frames: list, step_distances: list, cum_distances: list,

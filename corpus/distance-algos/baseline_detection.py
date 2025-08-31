@@ -155,6 +155,13 @@ class BaselineDetection:
 
         return h, h_inv
 
+    def apply_homography(self, pt, h_matrix):
+        """Helper method for homography application"""
+        point = np.array([pt[0], pt[1], 1.0])
+        transformed = h_matrix @ point
+
+        return transformed[:2] / transformed[2]
+
     def assess_homography_quality(self, h):
         """
         Assess the quality of the homography transformation.

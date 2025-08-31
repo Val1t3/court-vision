@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple, List
 
-import cv2  # noqa: F401 (ultralytics writes videos internally; keep for env sanity)
+import cv2
 from ultralytics import YOLO
 
 
@@ -19,7 +19,7 @@ class TrackRecord:
     confidence: float
 
 
-def analyze_video_with_yolo11_bytetrack(
+def analyze_video_with_yolo8_bytetrack(
     video_path: str,
     output_video_path: Optional[str] = None,
     output_csv_path: Optional[str] = None,
@@ -32,7 +32,7 @@ def analyze_video_with_yolo11_bytetrack(
     tracker_yaml: str = "bytetrack.yaml",  # use Ultralytics' built-in ByteTrack config
 ) -> Tuple[str, str]:
     """
-    Detects and tracks persons in a video using YOLOv11m + ByteTrack.
+    Detects and tracks persons in a video using YOLOv8m + ByteTrack.
     Returns (annotated_video_path, csv_path).
 
     Parameters
@@ -61,8 +61,8 @@ def analyze_video_with_yolo11_bytetrack(
         raise FileNotFoundError(f"Input video not found: {input_path}")
 
     # --- Load model (auto-downloads weights if needed)
-    # Model name must match Ultralytics' YOLOv11 medium checkpoint
-    model = YOLO("yolo11m.pt")
+    # Model name must match Ultralytics' YOLOv8 medium checkpoint
+    model = YOLO("yolo8m.pt")
 
     # We want only person class (COCO class 0). Using classes=[0] filters detections to "person".
     # `stream=True` yields per-frame results. `save=True` writes annotated video to disk.
@@ -233,7 +233,7 @@ def _find_first_video_file(directory: Path) -> Optional[Path]:
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(
-            "Usage: python yolo11_bytetrack_person_tracker.py <video_path> "
+            "Usage: python yolo8_bytetrack_person_tracker.py <video_path> "
             "[out_video_path] [out_csv_path]"
         )
         sys.exit(1)
@@ -242,7 +242,7 @@ if __name__ == "__main__":
     out_vid = sys.argv[2] if len(sys.argv) > 2 else None
     out_csv = sys.argv[3] if len(sys.argv) > 3 else None
 
-    annotated_video, csv_file = analyze_video_with_yolo11_bytetrack(
+    annotated_video, csv_file = analyze_video_with_yolo8_bytetrack(
         video_path=inp,
         output_video_path=out_vid,
         output_csv_path=out_csv,
